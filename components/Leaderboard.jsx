@@ -74,17 +74,15 @@ export default function Leaderboard({ entries, earnings }) {
   return (
     <div style={{ minHeight: '100vh' }}>
       {/* Top bar */}
-      <div style={{ background: '#006B54', padding: '10px 0' }}>
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>
-            Mendoza's Masters Pool • 2026
-          </div>
-          {hasEarnings && (
-            <span style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#d4af37', fontWeight: 600 }}>
-              ✦ Results Posted
-            </span>
-          )}
+      <div style={{ background: '#006B54', padding: '10px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>
+          Mendoza's Masters Pool • 2026
         </div>
+        {hasEarnings && (
+          <span style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#d4af37', fontWeight: 600 }}>
+            ✦ Results Posted
+          </span>
+        )}
       </div>
 
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 20px' }}>
@@ -130,8 +128,10 @@ export default function Leaderboard({ entries, earnings }) {
           </div>
 
           {totalEntries === 0 && (
-            <div style={{ marginTop: 16, padding: '8px 16px', background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 6, fontSize: 12, color: '#f57f17', display: 'inline-block' }}>
-              Entries will be loaded before the tournament begins Thursday
+            <div style={{ marginTop: 16 }}>
+              <div style={{ display: 'inline-block', padding: '8px 16px', background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 6, fontSize: 12, color: '#f57f17' }}>
+                Entries will be loaded before the tournament begins Thursday
+              </div>
             </div>
           )}
         </header>
