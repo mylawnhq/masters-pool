@@ -71,107 +71,125 @@ export default function Leaderboard({ entries, earnings }) {
     return count > 0 && !isNameSearch ? { count, name: matchGolfer } : null;
   }, [search, entries]);
 
+  const stats = [
+    { l: 'Entries',    v: totalEntries,                                            cls: 'stat-entries' },
+    { l: 'Pool Purse', v: `$${poolPurse.toLocaleString()}`,                        cls: 'stat-purse' },
+    { l: '1st Place',  v: `$${Math.round(poolPurse * 0.6).toLocaleString()}`,      cls: 'stat-1st highlight' },
+    { l: '2nd',        v: `$${Math.round(poolPurse * 0.3).toLocaleString()}`,      cls: 'stat-2nd' },
+    { l: '3rd',        v: `$${Math.round(poolPurse * 0.1).toLocaleString()}`,      cls: 'stat-3rd' },
+  ];
+
   return (
-    <div style={{ minHeight: '100vh' }}>
-      {/* Top bar */}
-      <div style={{ background: '#006B54', padding: '10px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>
-          Mendoza's Masters Pool • 2026
+    <div style={{ minHeight: '100vh', overflowX: 'hidden', maxWidth: '100vw' }}>
+      {/* STICKY HEADER */}
+      <div className="sticky-header">
+        {/* Top bar */}
+        <div style={{ background: '#006B54', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>
+            Mendoza's Masters Pool • 2026
+          </div>
+          {hasEarnings && (
+            <span style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#d4af37', fontWeight: 600 }}>
+              ✦ Results Posted
+            </span>
+          )}
         </div>
-        {hasEarnings && (
-          <span style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#d4af37', fontWeight: 600 }}>
-            ✦ Results Posted
-          </span>
-        )}
-      </div>
 
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 20px' }}>
-
-        {/* Header */}
-        <header style={{ textAlign: 'center', padding: '36px 0 28px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 18 }}>
-            <div style={{ height: 1, width: 50, background: 'linear-gradient(90deg, transparent, #006B54)' }} />
-            <div style={{ width: 7, height: 7, borderRadius: '50%', border: '1.5px solid #006B54' }} />
-            <div style={{ height: 1, width: 50, background: 'linear-gradient(270deg, transparent, #006B54)' }} />
-          </div>
-          <h1 style={{
-            fontFamily: bask, fontSize: 'clamp(26px,5vw,44px)',
-            fontWeight: 400, fontStyle: 'italic', color: '#006B54',
-            margin: '0 0 4px', lineHeight: 1.15,
-          }}>
-            Mendoza's Masters Pool
-          </h1>
-          <div style={{ fontFamily: bask, fontSize: 13, fontStyle: 'italic', color: '#8b7d6b', marginBottom: 22, letterSpacing: 0.5 }}>
-            Augusta National Golf Club — April 2026
-          </div>
+        <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px' }}>
+          {/* Title block — hidden on mobile */}
+          <header className="mobile-hide" style={{ textAlign: 'center', padding: '28px 0 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 16 }}>
+              <div style={{ height: 1, width: 50, background: 'linear-gradient(90deg, transparent, #006B54)' }} />
+              <div style={{ width: 7, height: 7, borderRadius: '50%', border: '1.5px solid #006B54' }} />
+              <div style={{ height: 1, width: 50, background: 'linear-gradient(270deg, transparent, #006B54)' }} />
+            </div>
+            <h1 style={{
+              fontFamily: bask, fontSize: 'clamp(26px,5vw,44px)',
+              fontWeight: 400, fontStyle: 'italic', color: '#006B54',
+              margin: '0 0 4px', lineHeight: 1.15,
+            }}>
+              Mendoza's Masters Pool
+            </h1>
+            <div style={{ fontFamily: bask, fontSize: 13, fontStyle: 'italic', color: '#8b7d6b', letterSpacing: 0.5 }}>
+              Augusta National Golf Club — April 2026
+            </div>
+          </header>
 
           {/* Stats bar */}
-          <div style={{
-            display: 'inline-flex', gap: 1, background: '#006B54', borderRadius: 8, overflow: 'hidden',
-            boxShadow: '0 2px 12px rgba(0,107,84,.15)',
-          }}>
-            {[
-              { l: 'Entries', v: totalEntries },
-              { l: 'Pool Purse', v: `$${poolPurse.toLocaleString()}` },
-              { l: '1st Place', v: `$${Math.round(poolPurse * 0.6).toLocaleString()}` },
-              { l: '2nd', v: `$${Math.round(poolPurse * 0.3).toLocaleString()}` },
-              { l: '3rd', v: `$${Math.round(poolPurse * 0.1).toLocaleString()}` },
-            ].map((s, i) => (
-              <div key={i} style={{
-                padding: '12px 18px', textAlign: 'center',
-                background: i === 2 ? 'rgba(255,255,255,.08)' : 'transparent', minWidth: 80,
-              }}>
-                <div style={{ fontSize: 17, fontWeight: 700, color: i === 2 ? '#d4af37' : '#fff', fontFamily: bask }}>{s.v}</div>
-                <div style={{ fontSize: 8, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,.5)', marginTop: 2, fontWeight: 600 }}>{s.l}</div>
-              </div>
-            ))}
+          <div style={{ padding: '14px 0 0' }}>
+            <div className="stats-bar">
+              {stats.map((s, i) => (
+                <div key={i} className={`stat-cell ${s.cls}`}>
+                  <div style={{
+                    fontSize: 'clamp(13px, 3.6vw, 17px)',
+                    fontWeight: 700,
+                    color: s.cls.includes('highlight') ? '#d4af37' : '#fff',
+                    fontFamily: bask,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}>{s.v}</div>
+                  <div style={{
+                    fontSize: 8, letterSpacing: 1.5, textTransform: 'uppercase',
+                    color: 'rgba(255,255,255,.55)', marginTop: 2, fontWeight: 600,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}>{s.l}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {totalEntries === 0 && (
-            <div style={{ marginTop: 16 }}>
+            <div style={{ textAlign: 'center', marginTop: 12 }}>
               <div style={{ display: 'inline-block', padding: '8px 16px', background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 6, fontSize: 12, color: '#f57f17' }}>
                 Entries will be loaded before the tournament begins Thursday
               </div>
             </div>
           )}
-        </header>
 
-        {/* Search */}
-        <div style={{ maxWidth: 440, margin: '0 auto 6px' }}>
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name or golfer…"
-            style={{
-              width: '100%', padding: '12px 16px',
-              background: '#fff', border: '1px solid #d9d3c7', borderRadius: 8,
-              color: '#1a2e1a', fontFamily: sans, fontSize: 14,
-              outline: 'none', boxSizing: 'border-box',
-              boxShadow: '0 1px 3px rgba(0,0,0,.04)',
-            }} />
-        </div>
-        {golferCount && (
-          <div style={{
-            maxWidth: 440, margin: '0 auto 0', padding: '10px 16px',
-            background: '#e8f5e9', border: '1px solid #c8e6c9', borderRadius: '0 0 8px 8px',
-            fontSize: 13, color: '#2e7d32', textAlign: 'center',
-          }}>
-            <strong>{golferCount.count}</strong> {golferCount.count === 1 ? 'person' : 'people'} picked <strong>{golferCount.name}</strong>
+          {/* Search */}
+          <div style={{ maxWidth: 440, margin: '14px auto 0' }}>
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search by name or golfer…"
+              style={{
+                width: '100%', padding: '12px 16px',
+                background: '#fff', border: '1px solid #d9d3c7', borderRadius: 8,
+                color: '#1a2e1a', fontFamily: sans, fontSize: 14,
+                outline: 'none', boxSizing: 'border-box',
+                boxShadow: '0 1px 3px rgba(0,0,0,.04)',
+              }} />
           </div>
-        )}
+          {golferCount && (
+            <div style={{
+              maxWidth: 440, margin: '0 auto', padding: '10px 16px',
+              background: '#e8f5e9', border: '1px solid #c8e6c9', borderRadius: '0 0 8px 8px',
+              fontSize: 13, color: '#2e7d32', textAlign: 'center',
+            }}>
+              <strong>{golferCount.count}</strong> {golferCount.count === 1 ? 'person' : 'people'} picked <strong>{golferCount.name}</strong>
+            </div>
+          )}
 
-        {/* Table header */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: hasEarnings ? '48px 1fr 108px 68px 24px' : '1fr 24px',
-          padding: '12px 16px', fontSize: 9, letterSpacing: 2.5,
-          textTransform: 'uppercase', color: '#8b7d6b', fontWeight: 700,
-          borderBottom: '1px solid #e0dbd2', marginTop: 16,
-        }}>
-          {hasEarnings && <div>Pos</div>}
-          <div>{hasEarnings ? 'Name' : 'Name (A–Z) — earnings posted after tournament'}</div>
-          {hasEarnings && <div style={{ textAlign: 'right' }}>Earnings</div>}
-          {hasEarnings && <div style={{ textAlign: 'right' }}>Score</div>}
-          <div />
+          {/* Column header */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: hasEarnings ? 'minmax(36px,48px) 1fr minmax(74px,108px) minmax(48px,68px) 24px' : '1fr 24px',
+            padding: '12px 0', fontSize: 9, letterSpacing: 2.5,
+            textTransform: 'uppercase', color: '#8b7d6b', fontWeight: 700,
+            borderBottom: '1px solid #e0dbd2', marginTop: 14,
+          }}>
+            {hasEarnings && <div>Pos</div>}
+            <div style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {hasEarnings ? 'Name' : 'Name (A–Z)'}
+            </div>
+            {hasEarnings && <div style={{ textAlign: 'right' }}>Earnings</div>}
+            {hasEarnings && <div style={{ textAlign: 'right' }}>Score</div>}
+            <div />
+          </div>
         </div>
+      </div>
+
+      {/* SCROLLING BODY */}
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px' }}>
 
         {/* Rows */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -187,8 +205,8 @@ export default function Leaderboard({ entries, earnings }) {
                   onClick={() => setExpanded(open ? null : entry.id)}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: hasEarnings ? '48px 1fr 108px 68px 24px' : '1fr 24px',
-                    alignItems: 'center', padding: '13px 16px', cursor: 'pointer',
+                    gridTemplateColumns: hasEarnings ? 'minmax(36px,48px) 1fr minmax(74px,108px) minmax(48px,68px) 24px' : '1fr 24px',
+                    alignItems: 'center', padding: '13px 0', cursor: 'pointer',
                     userSelect: 'none', transition: 'background .12s',
                     background: open ? '#f0ede5' : top3 ? '#fdfcf8' : idx % 2 === 0 ? '#fff' : '#faf8f4',
                     borderBottom: open ? 'none' : '1px solid #eee9e0',
@@ -203,9 +221,9 @@ export default function Leaderboard({ entries, earnings }) {
                       color: entry.rank === 1 ? '#d4af37' : entry.rank === 2 ? '#777' : entry.rank === 3 ? '#b87333' : '#8b7d6b',
                     }}>{m || entry.rank}</div>
                   )}
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: top3 ? 700 : 500, color: top3 ? '#006B54' : '#1a2e1a' }}>{entry.name}</div>
-                    <div style={{ fontSize: 11, color: '#a09888', marginTop: 1 }}>
+                  <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                    <div style={{ fontSize: 14, fontWeight: top3 ? 700 : 500, color: top3 ? '#006B54' : '#1a2e1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entry.name}</div>
+                    <div style={{ fontSize: 11, color: '#a09888', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {entry.picks[0].golfer} • {entry.picks[1].golfer} • +4 more
                     </div>
                   </div>
@@ -263,8 +281,8 @@ export default function Leaderboard({ entries, earnings }) {
                       </div>
                     )}
 
-                    {/* 3×2 pick grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                    {/* Pick grid (3 cols → 2 cols ≤640 → 1 col ≤400) */}
+                    <div className="picks-grid">
                       {entry.picks.map((p, i) => {
                         const pe = hasEarnings ? (earnings[p.golfer] || 0) : null;
                         return (
