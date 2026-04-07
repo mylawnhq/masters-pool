@@ -79,12 +79,18 @@ export default function Leaderboard({ entries, earnings }) {
     { l: '3rd',        v: `$${Math.round(poolPurse * 0.1).toLocaleString()}`,      cls: 'stat-3rd' },
   ];
 
+  const podium = [
+    { label: '1st Place', amt: Math.round(poolPurse * 0.6), color: '#d4af37' },
+    { label: '2nd',       amt: Math.round(poolPurse * 0.3), color: '#888'    },
+    { label: '3rd',       amt: Math.round(poolPurse * 0.1), color: '#b87333' },
+  ];
+
   return (
     <div style={{ minHeight: '100vh', overflowX: 'hidden', maxWidth: '100vw' }}>
       {/* STICKY HEADER */}
       <div className="sticky-header">
-        {/* Top bar */}
-        <div style={{ background: '#006B54', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Top bar — desktop */}
+        <div className="desktop-only" style={{ background: '#006B54', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>
             Mendoza's Masters Pool • 2026
           </div>
@@ -93,6 +99,51 @@ export default function Leaderboard({ entries, earnings }) {
               ✦ Results Posted
             </span>
           )}
+        </div>
+
+        {/* Top bar — mobile (Option C) */}
+        <div className="mobile-only" style={{ background: '#006B54', padding: '12px 16px 16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: 'rgba(255,255,255,.7)', fontWeight: 600 }}>
+              Mendoza's Masters Pool
+            </div>
+            <div style={{ fontSize: 10, letterSpacing: 2.5, color: 'rgba(255,255,255,.55)', fontWeight: 600 }}>
+              2026
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0 }}>
+              <span style={{ fontFamily: bask, fontSize: 26, fontWeight: 700, color: '#fff', lineHeight: 1 }}>{totalEntries}</span>
+              <span style={{ fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>entries</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0 }}>
+              <span style={{ fontFamily: bask, fontSize: 26, fontWeight: 700, color: '#fff', lineHeight: 1 }}>${poolPurse.toLocaleString()}</span>
+              <span style={{ fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>purse</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile podium cards */}
+        <div className="mobile-only" style={{ maxWidth: 960, margin: '0 auto', padding: '14px 16px 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
+            {podium.map((p, i) => (
+              <div key={i} style={{
+                background: '#fff', borderRadius: 8, padding: '10px 8px',
+                border: '1px solid #e0dbd2', textAlign: 'center',
+                boxShadow: '0 1px 3px rgba(0,0,0,.04)', minWidth: 0,
+              }}>
+                <div style={{
+                  fontSize: 8, letterSpacing: 1.5, textTransform: 'uppercase',
+                  color: '#8b7d6b', fontWeight: 700, marginBottom: 4,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>{p.label}</div>
+                <div style={{
+                  fontFamily: bask, fontSize: 16, fontWeight: 700, color: p.color,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>${p.amt.toLocaleString()}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px' }}>
@@ -115,8 +166,8 @@ export default function Leaderboard({ entries, earnings }) {
             </div>
           </header>
 
-          {/* Stats bar */}
-          <div style={{ padding: '14px 0 0' }}>
+          {/* Stats bar — desktop only */}
+          <div className="desktop-only" style={{ padding: '14px 0 0' }}>
             <div className="stats-bar">
               {stats.map((s, i) => (
                 <div key={i} className={`stat-cell ${s.cls}`}>
@@ -286,20 +337,20 @@ export default function Leaderboard({ entries, earnings }) {
                       {entry.picks.map((p, i) => {
                         const pe = hasEarnings ? (earnings[p.golfer] || 0) : null;
                         return (
-                          <div key={i} style={{
+                          <div key={i} className="pick-card" style={{
                             background: '#fff', borderRadius: 8,
                             border: '1px solid #e0dbd2', padding: '14px 14px 12px',
                             boxShadow: '0 1px 4px rgba(0,0,0,.04)',
-                            position: 'relative', overflow: 'hidden',
+                            position: 'relative', overflow: 'hidden', minWidth: 0,
                           }}>
                             <div style={{
                               position: 'absolute', top: 0, left: 0, right: 0, height: 3,
                               background: !hasEarnings ? '#006B54' : pe >= 1e6 ? '#006B54' : pe >= 4e5 ? '#2a9d6e' : pe >= 1e5 ? '#8bb89e' : '#d9d3c7',
                             }} />
-                            <div style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: '#006B54', fontWeight: 700, marginBottom: 6 }}>
+                            <div className="pick-group" style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: '#006B54', fontWeight: 700, marginBottom: 6 }}>
                               {p.group}
                             </div>
-                            <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2e1a', marginBottom: hasEarnings ? 8 : 0, lineHeight: 1.2 }}>
+                            <div className="pick-name" style={{ fontSize: 14, fontWeight: 600, color: '#1a2e1a', marginBottom: hasEarnings ? 8 : 0, lineHeight: 1.2 }}>
                               {p.golfer}
                             </div>
                             {hasEarnings && (
@@ -316,27 +367,29 @@ export default function Leaderboard({ entries, earnings }) {
 
                     {/* Tiebreakers */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
-                      <div style={{
+                      <div className="tiebreaker-card" style={{
                         background: '#fff', borderRadius: 8, border: '1px solid #e0dbd2',
                         padding: '12px 14px', boxShadow: '0 1px 4px rgba(0,0,0,.04)',
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        minWidth: 0,
                       }}>
-                        <div>
+                        <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: '#8b7d6b', fontWeight: 700, marginBottom: 2 }}>Tiebreaker 1</div>
                           <div style={{ fontSize: 10, color: '#a09888' }}>Low Amateur</div>
                         </div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#006B54', fontFamily: bask, textAlign: 'right' }}>{entry.low_amateur}</div>
+                        <div className="tb-value" style={{ fontSize: 13, fontWeight: 700, color: '#006B54', fontFamily: bask, textAlign: 'right', wordBreak: 'break-word' }}>{entry.low_amateur}</div>
                       </div>
-                      <div style={{
+                      <div className="tiebreaker-card" style={{
                         background: '#fff', borderRadius: 8, border: '1px solid #e0dbd2',
                         padding: '12px 14px', boxShadow: '0 1px 4px rgba(0,0,0,.04)',
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        minWidth: 0,
                       }}>
-                        <div>
+                        <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: '#8b7d6b', fontWeight: 700, marginBottom: 2 }}>Tiebreaker 2</div>
                           <div style={{ fontSize: 10, color: '#a09888' }}>Winning Score</div>
                         </div>
-                        <div style={{ fontSize: 20, fontWeight: 700, color: '#006B54', fontFamily: bask }}>{entry.winning_score}</div>
+                        <div className="tb-value" style={{ fontSize: 20, fontWeight: 700, color: '#006B54', fontFamily: bask }}>{entry.winning_score}</div>
                       </div>
                     </div>
                   </div>

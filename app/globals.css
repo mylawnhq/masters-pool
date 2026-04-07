@@ -27,7 +27,7 @@ body {
   box-shadow: 0 2px 10px rgba(0,0,0,0.04);
 }
 
-/* Stats bar grid: 5 cols desktop, 2-row layout on mobile (2 + 3) */
+/* Desktop stats bar: 5 cols inline */
 .stats-bar {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -47,32 +47,45 @@ body {
 }
 .stats-bar > .stat-cell.highlight { background: #0a7560; }
 
-@media (max-width: 640px) {
-  .stats-bar { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .stats-bar > .stat-entries { grid-column: span 3; }
-  .stats-bar > .stat-purse   { grid-column: span 3; }
-  .stats-bar > .stat-1st     { grid-column: span 2; }
-  .stats-bar > .stat-2nd     { grid-column: span 2; }
-  .stats-bar > .stat-3rd     { grid-column: span 2; }
-  .stats-bar > .stat-cell    { padding: 10px 6px; }
-}
-
-/* Pick cards grid */
+/* Pick cards grid — always 3 columns */
 .picks-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
+
+/* Pick card mobile tweaks */
 @media (max-width: 640px) {
-  .picks-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 400px) {
-  .picks-grid { grid-template-columns: 1fr; }
+  .pick-card { padding: 10px 8px !important; }
+  .pick-card .pick-group { font-size: 8px !important; }
+  .pick-card .pick-name {
+    font-size: 12px !important;
+    white-space: normal !important;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.25 !important;
+  }
+  .picks-grid { gap: 6px; }
 }
 
-/* Hide on mobile */
+/* Tiebreaker cards: stack on mobile */
 @media (max-width: 640px) {
-  .mobile-hide { display: none !important; }
+  .tiebreaker-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px;
+  }
+  .tiebreaker-card .tb-value {
+    text-align: left !important;
+  }
+}
+
+/* Show/hide helpers */
+.mobile-only { display: none; }
+@media (max-width: 640px) {
+  .mobile-only { display: block; }
+  .desktop-only { display: none !important; }
+  .mobile-hide  { display: none !important; }
 }
 
 input::placeholder, textarea::placeholder { color: #b5a999; }
