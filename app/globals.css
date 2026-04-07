@@ -1,0 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #f7f4ef;
+  font-family: 'Source Sans 3', 'Helvetica Neue', sans-serif;
+  color: #1a2e1a;
+  -webkit-font-smoothing: antialiased;
+}
+
+input::placeholder, textarea::placeholder { color: #b5a999; }
+input:focus, textarea:focus {
+  border-color: #006B54;
+  box-shadow: 0 0 0 3px rgba(0,107,84,.08);
+  outline: none;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-thumb { background: #d9d3c7; border-radius: 3px; }
