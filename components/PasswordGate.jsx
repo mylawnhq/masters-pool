@@ -264,7 +264,7 @@ export default function PasswordGate({ children }) {
                 borderRadius: 2,
               }}
             >
-              Est. 2025
+              Est. 2017
             </div>
           </div>
         </div>
