@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import Leaderboard from '@/components/Leaderboard';
+import PasswordGate from '@/components/PasswordGate';
 
 async function getData() {
   const supabase = createClient(
@@ -33,5 +34,9 @@ export const revalidate = 60;
 
 export default async function Home() {
   const { entries, earnings } = await getData();
-  return <Leaderboard entries={entries} earnings={earnings} />;
+  return (
+    <PasswordGate>
+      <Leaderboard entries={entries} earnings={earnings} />
+    </PasswordGate>
+  );
 }
