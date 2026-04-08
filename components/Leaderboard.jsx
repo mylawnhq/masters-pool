@@ -1,5 +1,6 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 const fmt = n => n >= 1e6 ? `$${(n/1e6).toFixed(2)}M` : n >= 1e3 ? `$${(n/1e3).toFixed(0)}K` : `$${n.toLocaleString()}`;
 const fmtFull = n => `$${n.toLocaleString()}`;
@@ -7,12 +8,68 @@ const medal = r => r === 1 ? '🏆' : r === 2 ? '🥈' : r === 3 ? '🥉' : null
 const bask = "'Libre Baskerville', Georgia, serif";
 const sans = "'Source Sans 3', 'Helvetica Neue', sans-serif";
 
-export default function Leaderboard({ entries, earnings }) {
+function timeAgo(iso) {
+  if (!iso) return null;
+  const diff = Math.max(0, Date.now() - new Date(iso).getTime());
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m === 1) return '1 minute ago';
+  if (m < 60) return `${m} minutes ago`;
+  const h = Math.floor(m / 60);
+  if (h === 1) return '1 hour ago';
+  if (h < 24) return `${h} hours ago`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? '1 day ago' : `${d} days ago`;
+}
+
+export default function Leaderboard({ entries, earnings: initialEarnings, lastUpdated: initialLastUpdated, scoresLive }) {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(null);
+  const [earnings, setEarnings] = useState(initialEarnings || {});
+  const [lastUpdated, setLastUpdated] = useState(initialLastUpdated || null);
+  const [, setTick] = useState(0); // re-render so "X minutes ago" stays fresh
+
   const hasEarnings = Object.keys(earnings).length > 0;
   const totalEntries = entries.length;
   const poolPurse = totalEntries * 25;
+
+  // Live polling: every 2 minutes, but only on Sunday, only when the
+  // tournament is live (scoresLive flag on AND earnings exist).
+  useEffect(() => {
+    if (!scoresLive || !hasEarnings) return;
+    if (typeof window === 'undefined') return;
+    if (new Date().getDay() !== 0) return; // 0 = Sunday
+
+    let cancelled = false;
+    async function refresh() {
+      try {
+        const [{ data: earningsData }, { data: latest }] = await Promise.all([
+          supabase.from('golfer_earnings').select('golfer_name, earnings'),
+          supabase.from('golfer_leaderboard').select('updated_at').order('updated_at', { ascending: false }).limit(1),
+        ]);
+        if (cancelled) return;
+        if (earningsData) {
+          const next = {};
+          earningsData.forEach(r => { next[r.golfer_name] = Number(r.earnings); });
+          setEarnings(next);
+        }
+        if (latest?.[0]?.updated_at) setLastUpdated(latest[0].updated_at);
+      } catch (e) {
+        // swallow — we'll try again on the next tick
+      }
+    }
+    const id = setInterval(refresh, 120_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [scoresLive, hasEarnings]);
+
+  // Tick once a minute so the "X minutes ago" label stays current.
+  useEffect(() => {
+    if (!lastUpdated) return;
+    const id = setInterval(() => setTick(t => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, [lastUpdated]);
+
+  const updatedLabel = lastUpdated ? timeAgo(lastUpdated) : null;
 
   // Build ranked list
   const ranked = useMemo(() => {
@@ -95,9 +152,16 @@ export default function Leaderboard({ entries, earnings }) {
             Mendoza's Masters Pool • 2026
           </div>
           {hasEarnings && (
-            <span style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#d4af37', fontWeight: 600 }}>
-              ✦ Results Posted
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              {updatedLabel && (
+                <span style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,.6)', fontWeight: 500 }}>
+                  Scores updated {updatedLabel}
+                </span>
+              )}
+              <span style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#d4af37', fontWeight: 600 }}>
+                ✦ Results Posted
+              </span>
+            </div>
           )}
         </div>
 
@@ -111,6 +175,11 @@ export default function Leaderboard({ entries, earnings }) {
               2026
             </div>
           </div>
+          {hasEarnings && updatedLabel && (
+            <div style={{ marginTop: 6, fontSize: 9, letterSpacing: 1, color: 'rgba(255,255,255,.55)', fontWeight: 500 }}>
+              Scores updated {updatedLabel}
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 10 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0 }}>
               <span style={{ fontFamily: bask, fontSize: 26, fontWeight: 700, color: '#fff', lineHeight: 1 }}>{totalEntries}</span>

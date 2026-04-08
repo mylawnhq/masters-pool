@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "import-csv": "node scripts/import-entries.mjs",
-    "import-earnings": "node scripts/import-earnings.mjs"
+    "import-earnings": "node scripts/import-earnings.mjs",
+    "scrape-leaderboard": "node scripts/scrape-leaderboard.mjs",
+    "update-leaderboard": "node scripts/update-leaderboard.mjs"
   },
   "dependencies": {
     "next": "^14.2.0",
