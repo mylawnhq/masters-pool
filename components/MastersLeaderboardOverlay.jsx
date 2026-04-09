@@ -38,7 +38,7 @@ function scoreColor(n, status) {
 // render plain.
 function HoleCell({ strokes, par }) {
   if (strokes == null) {
-    return <span style={{ color: '#d9d3c7' }}>—</span>;
+    return <span style={{ color: '#d9d3c7', fontSize: 12 }}>—</span>;
   }
   const diff = strokes - par;
   let shape = null;
@@ -48,16 +48,37 @@ function HoleCell({ strokes, par }) {
   else if (diff >= 2) shape = 'double';   // double square red
 
   const SIZE = 22;
-  const numStyle = {
-    fontSize: 12,
-    fontWeight: 700,
-    color: '#1a2e1a',
-    fontFamily: bask,
-    lineHeight: '22px',
-    display: 'inline-block',
-  };
+  const numberSpan = (
+    <span
+      style={{
+        fontSize: 12,
+        fontWeight: 700,
+        color: '#1a2e1a',
+        fontFamily: bask,
+        lineHeight: 1,
+      }}
+    >
+      {strokes}
+    </span>
+  );
 
-  if (!shape) return <span style={numStyle}>{strokes}</span>;
+  if (!shape) {
+    // No shape — render the number in a fixed-size flex box so unwrapped
+    // cells line up vertically with the wrapped ones above and below.
+    return (
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: SIZE,
+          height: SIZE,
+        }}
+      >
+        {numberSpan}
+      </span>
+    );
+  }
 
   const stroke =
     shape === 'eagle' ? '#d4af37'
@@ -70,7 +91,9 @@ function HoleCell({ strokes, par }) {
     <span
       style={{
         position: 'relative',
-        display: 'inline-block',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         width: SIZE,
         height: SIZE,
       }}
@@ -95,16 +118,7 @@ function HoleCell({ strokes, par }) {
           }}
         />
       )}
-      <span
-        style={{
-          position: 'absolute',
-          inset: 0,
-          textAlign: 'center',
-          ...numStyle,
-        }}
-      >
-        {strokes}
-      </span>
+      {numberSpan}
     </span>
   );
 }
@@ -248,7 +262,7 @@ function ScorecardExpanded({ holes }) {
             );
           })}
           <td style={totalCell}>
-            {totalForNine != null ? totalForNine : '—'}
+            {totalForNine != null ? totalForNine : ''}
           </td>
         </tr>
       </tbody>
