@@ -358,6 +358,7 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
   const [expanded, setExpanded] = useState(null);
   const [favorites, setFavorites] = useState([]);
   const [favoritesHydrated, setFavoritesHydrated] = useState(false);
+  const [search, setSearch] = useState('');
 
   // Hydrate favorites from localStorage once on mount (client-only).
   useEffect(() => {
@@ -396,9 +397,12 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
   // Set for O(1) lookup inside the row renderer and filter.
   const favoritesSet = useMemo(() => new Set(favorites), [favorites]);
 
-  // Reset expansion when the overlay closes so reopening starts collapsed.
+  // Reset expansion + search when the overlay closes so reopening is clean.
   useEffect(() => {
-    if (!open) setExpanded(null);
+    if (!open) {
+      setExpanded(null);
+      setSearch('');
+    }
   }, [open]);
 
   // Lock body scroll while open, close on Escape.
@@ -561,6 +565,31 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
             <div style={{ textAlign: 'right' }}>Thru</div>
           </div>
 
+          {/* Search input — filters the list by golfer name. Compact version
+              of the main leaderboard search bar. */}
+          <div style={{ padding: '10px 14px 8px', background: '#fff', borderBottom: '1px solid #f0ede5' }}>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search golfer…"
+              aria-label="Search golfers"
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                fontFamily: sans,
+                fontSize: 13,
+                color: '#1a2e1a',
+                background: '#fff',
+                border: '1px solid #d9d3c7',
+                borderRadius: 6,
+                outline: 'none',
+                boxSizing: 'border-box',
+                boxShadow: '0 1px 2px rgba(0,0,0,.03)',
+              }}
+            />
+          </div>
+
           {list.length === 0 && (
             <div
               style={{
@@ -577,7 +606,12 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
 
           {/* Row renderer shared by My Golfers and the full-field list. */}
           {(() => {
+            const query = search.trim().toLowerCase();
+            const isSearching = query.length > 0;
             const favGolfers = list.filter(g => favoritesSet.has(g.name));
+            const filtered = isSearching
+              ? list.filter(g => g.name.toLowerCase().includes(query))
+              : list;
 
             const renderRow = (g, i, section) => {
               const posNum = parseInt(
@@ -739,8 +773,8 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
 
             return (
               <>
-                {/* My Golfers pinned section */}
-                {favGolfers.length > 0 && (
+                {/* My Golfers pinned section — hidden during search */}
+                {!isSearching && favGolfers.length > 0 && (
                   <div>
                     <div
                       style={{
@@ -779,8 +813,22 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
                   </div>
                 )}
 
-                {/* Full field */}
-                {list.map((g, i) => renderRow(g, i, 'main'))}
+                {/* Full field (or flat filtered results while searching) */}
+                {filtered.map((g, i) => renderRow(g, i, 'main'))}
+
+                {isSearching && filtered.length === 0 && (
+                  <div
+                    style={{
+                      padding: 24,
+                      textAlign: 'center',
+                      color: '#8b7d6b',
+                      fontStyle: 'italic',
+                      fontSize: 13,
+                    }}
+                  >
+                    No golfers match “{search}”
+                  </div>
+                )}
               </>
             );
           })()}
