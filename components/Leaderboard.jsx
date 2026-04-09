@@ -22,12 +22,46 @@ function timeAgo(iso) {
   return d === 1 ? '1 day ago' : `${d} days ago`;
 }
 
+const FAVORITES_KEY = 'masters-pool-favorites';
+
 export default function Leaderboard({ entries, earnings: initialEarnings, lastUpdated: initialLastUpdated, scoresLive }) {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(null);
   const [earnings, setEarnings] = useState(initialEarnings || {});
   const [lastUpdated, setLastUpdated] = useState(initialLastUpdated || null);
   const [, setTick] = useState(0); // re-render so "X minutes ago" stays fresh
+  const [favorites, setFavorites] = useState([]);
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false);
+
+  // Load favorites from localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(FAVORITES_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setFavorites(parsed);
+      }
+    } catch (e) {
+      // ignore corrupt storage
+    }
+    setFavoritesLoaded(true);
+  }, []);
+
+  // Persist favorites whenever they change (after initial load)
+  useEffect(() => {
+    if (!favoritesLoaded || typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+    } catch (e) {
+      // ignore quota errors
+    }
+  }, [favorites, favoritesLoaded]);
+
+  const toggleFavorite = (id) => {
+    setFavorites(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+  const favSet = useMemo(() => new Set(favorites), [favorites]);
 
   const hasEarnings = Object.keys(earnings).length > 0;
   const totalEntries = entries.length;
@@ -111,6 +145,12 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
       e.picks.some(p => p.golfer.toLowerCase().includes(q))
     );
   }, [ranked, search]);
+
+  // Watching list — favorites in their current ranked order, hidden during search
+  const watching = useMemo(() => {
+    if (search || favorites.length === 0) return [];
+    return ranked.filter(e => favSet.has(e.id));
+  }, [ranked, favSet, search, favorites.length]);
 
   // Golfer search counter
   const golferCount = useMemo(() => {
@@ -292,11 +332,12 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
           {/* Column header */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: hasEarnings ? 'minmax(36px,48px) 1fr minmax(74px,108px) minmax(48px,68px) 24px' : '1fr 24px',
+            gridTemplateColumns: hasEarnings ? '28px minmax(36px,48px) 1fr minmax(74px,108px) minmax(48px,68px) 24px' : '28px 1fr 24px',
             padding: '12px 0', fontSize: 9, letterSpacing: 2.5,
             textTransform: 'uppercase', color: '#8b7d6b', fontWeight: 700,
             borderBottom: '1px solid #e0dbd2', marginTop: 14,
           }}>
+            <div />
             {hasEarnings && <div>Pos</div>}
             <div style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {hasEarnings ? 'Name' : 'Name (A–Z)'}
@@ -310,32 +351,53 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
 
       {/* SCROLLING BODY */}
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px' }}>
+        {(() => {
+        const renderRow = (entry, idx, section) => {
+          const expandKey = `${section}:${entry.id}`;
+          const open = expanded === expandKey;
+          const top3 = hasEarnings && entry.rank <= 3;
+          const m = hasEarnings ? medal(entry.rank) : null;
+          const isFav = favSet.has(entry.id);
+          const baseBg = top3 ? '#fdfcf8' : idx % 2 === 0 ? '#fff' : '#faf8f4';
+          const leftBorderColor = isFav
+            ? '#d4af37'
+            : top3
+              ? (entry.rank === 1 ? '#d4af37' : entry.rank === 2 ? '#a0a0a0' : '#b87333')
+              : 'transparent';
 
-        {/* Rows */}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {filtered.map((entry, idx) => {
-            const open = expanded === entry.id;
-            const top3 = hasEarnings && entry.rank <= 3;
-            const m = hasEarnings ? medal(entry.rank) : null;
-
-            return (
-              <div key={entry.id}>
-                {/* Row */}
+          return (
+            <div key={`${section}-${entry.id}`}>
+              {/* Row */}
+              <div
+                onClick={() => setExpanded(open ? null : expandKey)}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: hasEarnings ? '28px minmax(36px,48px) 1fr minmax(74px,108px) minmax(48px,68px) 24px' : '28px 1fr 24px',
+                  alignItems: 'center', padding: '13px 0', cursor: 'pointer',
+                  userSelect: 'none', transition: 'background .12s',
+                  background: open ? '#f0ede5' : baseBg,
+                  borderBottom: open ? 'none' : '1px solid #eee9e0',
+                  borderLeft: `3px solid ${leftBorderColor}`,
+                }}
+                onMouseEnter={e => { if (!open) e.currentTarget.style.background = '#f5f2eb'; }}
+                onMouseLeave={e => { if (!open) e.currentTarget.style.background = open ? '#f0ede5' : baseBg; }}
+              >
                 <div
-                  onClick={() => setExpanded(open ? null : entry.id)}
+                  onClick={e => { e.stopPropagation(); toggleFavorite(entry.id); }}
+                  role="button"
+                  aria-label={isFav ? 'Remove from Watching' : 'Add to Watching'}
+                  aria-pressed={isFav}
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: hasEarnings ? 'minmax(36px,48px) 1fr minmax(74px,108px) minmax(48px,68px) 24px' : '1fr 24px',
-                    alignItems: 'center', padding: '13px 0', cursor: 'pointer',
-                    userSelect: 'none', transition: 'background .12s',
-                    background: open ? '#f0ede5' : top3 ? '#fdfcf8' : idx % 2 === 0 ? '#fff' : '#faf8f4',
-                    borderBottom: open ? 'none' : '1px solid #eee9e0',
-                    borderLeft: top3 ? `3px solid ${entry.rank === 1 ? '#d4af37' : entry.rank === 2 ? '#a0a0a0' : '#b87333'}` : '3px solid transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    minHeight: 44, width: 28, marginLeft: -2,
+                    fontSize: 18, lineHeight: 1,
+                    color: isFav ? '#d4af37' : '#d9d3c7',
+                    cursor: 'pointer', userSelect: 'none',
                   }}
-                  onMouseEnter={e => { if (!open) e.currentTarget.style.background = '#f5f2eb'; }}
-                  onMouseLeave={e => { if (!open) e.currentTarget.style.background = open ? '#f0ede5' : top3 ? '#fdfcf8' : idx % 2 === 0 ? '#fff' : '#faf8f4'; }}
                 >
-                  {hasEarnings && (
+                  {isFav ? '★' : '☆'}
+                </div>
+                {hasEarnings && (
                     <div style={{
                       fontSize: m ? 19 : 15, fontWeight: 700, fontFamily: bask,
                       color: entry.rank === 1 ? '#d4af37' : entry.rank === 2 ? '#777' : entry.rank === 3 ? '#b87333' : '#8b7d6b',
@@ -465,13 +527,49 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
                 </div>
               </div>
             );
-          })}
-          {filtered.length === 0 && (
-            <div style={{ padding: 40, textAlign: 'center', color: '#b5a999', fontSize: 14 }}>
-              {search ? `No entries match "${search}"` : 'No entries loaded yet'}
-            </div>
-          )}
-        </div>
+          };
+
+          return (
+            <>
+              {watching.length > 0 && (
+                <div style={{
+                  background: '#fdfcf6',
+                  border: '1px solid #d4af37',
+                  borderRadius: 8,
+                  marginTop: 6,
+                  marginBottom: 18,
+                  overflow: 'hidden',
+                }}>
+                  <div style={{
+                    padding: '10px 14px',
+                    background: 'rgba(212, 175, 55, 0.08)',
+                    borderBottom: '1px solid rgba(212, 175, 55, 0.4)',
+                    fontSize: 10,
+                    letterSpacing: 2,
+                    textTransform: 'uppercase',
+                    color: '#8a6d1a',
+                    fontWeight: 700,
+                    fontFamily: sans,
+                  }}>
+                    ★ Watching ({watching.length})
+                  </div>
+                  <div style={{ padding: '0 14px' }}>
+                    {watching.map((entry, idx) => renderRow(entry, idx, 'watching'))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {filtered.map((entry, idx) => renderRow(entry, idx, 'main'))}
+                {filtered.length === 0 && (
+                  <div style={{ padding: 40, textAlign: 'center', color: '#b5a999', fontSize: 14 }}>
+                    {search ? `No entries match "${search}"` : 'No entries loaded yet'}
+                  </div>
+                )}
+              </div>
+            </>
+          );
+        })()}
 
         {/* Footer */}
         <footer style={{ textAlign: 'center', padding: '36px 0 20px' }}>
