@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const ESPN_URL = 'https://site.api.espn.com/apis/site/v2/sports/golf/mast/leaderboard';
+const MASTERS_URL = 'https://www.masters.com/en_US/scores/feeds/2026/scores.json';
 
 function normalizeStatus(raw) {
   if (!raw) return 'active';
@@ -25,7 +26,62 @@ function parseScore(val) {
   return Number.isFinite(n) ? n : null;
 }
 
-async function fetchLeaderboard() {
+async function fetchFromMasters() {
+  const res = await fetch(MASTERS_URL, {
+    headers: { 'User-Agent': 'masters-pool-scraper/1.0' },
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`masters.com fetch failed: ${res.status} ${res.statusText}`);
+  const json = await res.json();
+
+  // The feed structure may vary; try common shapes.
+  const players =
+    json?.data?.player ||
+    json?.data?.players ||
+    (Array.isArray(json?.data) ? json.data : null) ||
+    json?.players ||
+    json?.player ||
+    [];
+
+  if (!Array.isArray(players) || players.length === 0) {
+    throw new Error('No players found in masters.com response');
+  }
+
+  const mapped = players.map(p => {
+    const name =
+      p.display_name ||
+      p.displayName ||
+      p.full_name ||
+      [p.first_name, p.last_name].filter(Boolean).join(' ').trim() ||
+      'Unknown';
+
+    const rawStatus = p.status || p.player_status || '';
+    const pos = p.pos || p.position || '';
+    const thru = p.thru != null ? String(p.thru) : (p.tee_time ? 'TEE' : '');
+
+    let scoreToPar = parseScore(p.topar ?? p.toPar ?? p.to_par ?? p.score);
+    let todayScore = parseScore(p.today ?? p.round_score);
+
+    return {
+      golfer_name: name,
+      position: pos || null,
+      score_to_par: scoreToPar,
+      today_score: todayScore,
+      thru: thru || null,
+      status: normalizeStatus(rawStatus),
+    };
+  });
+
+  // Sanity check: must have at least some recognizable scoring data.
+  const withScores = mapped.filter(g => g.score_to_par != null);
+  if (withScores.length === 0) {
+    throw new Error('masters.com data parsed but contained no scores');
+  }
+
+  return mapped;
+}
+
+async function fetchFromESPN() {
   const res = await fetch(ESPN_URL, {
     headers: { 'User-Agent': 'masters-pool-scraper/1.0' },
     cache: 'no-store',
@@ -97,7 +153,18 @@ export async function GET(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    const leaderboard = await fetchLeaderboard();
+    let leaderboard;
+    let source;
+    let mastersError = null;
+    try {
+      leaderboard = await fetchFromMasters();
+      source = 'masters.com';
+    } catch (err) {
+      mastersError = err.message || String(err);
+      leaderboard = await fetchFromESPN();
+      source = 'espn';
+    }
+
     const earnings = calculateEarnings(leaderboard, purse);
 
     const now = new Date().toISOString();
@@ -130,6 +197,8 @@ export async function GET(request) {
 
     return NextResponse.json({
       success: true,
+      source,
+      mastersError,
       golfersUpdated: leaderboard.length,
       leader: leader
         ? {
