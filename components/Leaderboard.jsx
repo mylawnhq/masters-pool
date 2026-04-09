@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { logEvent } from '@/lib/analytics';
 import TickerBar from './TickerBar';
+import MastersLeaderboardOverlay from './MastersLeaderboardOverlay';
 
 const fmt = n => n >= 1e6 ? `$${(n/1e6).toFixed(2)}M` : n >= 1e3 ? `$${(n/1e3).toFixed(0)}K` : `$${n.toLocaleString()}`;
 const fmtFull = n => `$${n.toLocaleString()}`;
@@ -60,6 +61,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
   const [favorites, setFavorites] = useState([]);
   const [favoritesLoaded, setFavoritesLoaded] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
 
   const handleShare = (entry) => {
     logEvent({ eventType: 'share' });
@@ -285,21 +287,55 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
     { l: '3rd',        v: `$${Math.round(poolPurse * 0.1).toLocaleString()}`,      cls: 'stat-3rd' },
   ];
 
-  const podium = [
-    { label: '1st Place', amt: Math.round(poolPurse * 0.6), color: '#d4af37' },
-    { label: '2nd',       amt: Math.round(poolPurse * 0.3), color: '#888'    },
-    { label: '3rd',       amt: Math.round(poolPurse * 0.1), color: '#b87333' },
-  ];
-
   return (
     <div style={{ minHeight: '100vh', overflowX: 'clip', maxWidth: '100vw' }}>
       {/* STICKY HEADER */}
       <div className="sticky-header">
         {/* Top bar — desktop */}
-        <div className="desktop-only" style={{ background: '#006B54', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="desktop-only" style={{ position: 'relative', background: '#006B54', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>
             Mendoza's Masters Pool • <a href="/admin" style={{ color: 'inherit', textDecoration: 'none' }}>2026</a>
           </div>
+          {liveMode && (
+            <button
+              type="button"
+              onClick={() => setLeaderboardOpen(true)}
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                background: 'rgba(255,255,255,.1)',
+                border: '1px solid rgba(255,255,255,.15)',
+                borderRadius: 5,
+                padding: '5px 14px',
+                color: '#fff',
+                fontFamily: sans,
+                fontSize: 10,
+                letterSpacing: 2,
+                textTransform: 'uppercase',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: '#4ade80',
+                  boxShadow: '0 0 6px rgba(74, 222, 128, .8)',
+                  animation: 'ticker-dot-pulse 1.6s ease-in-out infinite',
+                }}
+              />
+              Masters Leaderboard
+              <span style={{ fontSize: 9, opacity: 0.7 }}>▾</span>
+            </button>
+          )}
           {(liveMode || hasEarnings) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               {updatedLabel && (
@@ -314,8 +350,9 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
           )}
         </div>
 
-        {/* Top bar — mobile (Option C) */}
-        <div className="mobile-only" style={{ background: '#006B54', padding: '12px 16px 16px' }}>
+        {/* Top bar — mobile */}
+        <div className="mobile-only" style={{ background: '#006B54', padding: '12px 16px 14px' }}>
+          {/* Row 1: brand + year */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: 'rgba(255,255,255,.7)', fontWeight: 600 }}>
               Mendoza's Masters Pool
@@ -324,48 +361,110 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
               <a href="/admin" style={{ color: 'inherit', textDecoration: 'none' }}>2026</a>
             </div>
           </div>
-          {(liveMode || hasEarnings) && updatedLabel && (
-            <div style={{ marginTop: 6, fontSize: 9, letterSpacing: 1, color: 'rgba(255,255,255,.55)', fontWeight: 500 }}>
-              Scores updated {updatedLabel}
+
+          {/* Row 2: two big tiles (entries + pool purse) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 }}>
+            <div style={{
+              background: 'rgba(255,255,255,.08)', borderRadius: 6,
+              padding: '8px 10px', textAlign: 'center',
+            }}>
+              <div style={{ fontFamily: bask, fontSize: 18, fontWeight: 700, color: '#fff', lineHeight: 1 }}>
+                {totalEntries}
+              </div>
+              <div style={{
+                fontSize: 7, letterSpacing: 1.5, textTransform: 'uppercase',
+                color: 'rgba(255,255,255,.55)', fontWeight: 700, marginTop: 4,
+              }}>
+                Entries
+              </div>
             </div>
-          )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0 }}>
-              <span style={{ fontFamily: bask, fontSize: 26, fontWeight: 700, color: '#fff', lineHeight: 1 }}>{totalEntries}</span>
-              <span style={{ fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>entries</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0 }}>
-              <span style={{ fontFamily: bask, fontSize: 26, fontWeight: 700, color: '#fff', lineHeight: 1 }}>${poolPurse.toLocaleString()}</span>
-              <span style={{ fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>purse</span>
+            <div style={{
+              background: 'rgba(255,255,255,.08)', borderRadius: 6,
+              padding: '8px 10px', textAlign: 'center',
+            }}>
+              <div style={{ fontFamily: bask, fontSize: 18, fontWeight: 700, color: '#fff', lineHeight: 1 }}>
+                ${poolPurse.toLocaleString()}
+              </div>
+              <div style={{
+                fontSize: 7, letterSpacing: 1.5, textTransform: 'uppercase',
+                color: 'rgba(255,255,255,.55)', fontWeight: 700, marginTop: 4,
+              }}>
+                Pool Purse
+              </div>
             </div>
           </div>
+
+          {/* Row 3: three small tiles (1st/2nd/3rd) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginTop: 8 }}>
+            {[
+              { amt: Math.round(poolPurse * 0.6), label: '1st', color: '#d4af37' },
+              { amt: Math.round(poolPurse * 0.3), label: '2nd', color: 'rgba(255,255,255,.6)' },
+              { amt: Math.round(poolPurse * 0.1), label: '3rd', color: 'rgba(255,255,255,.6)' },
+            ].map((p, i) => (
+              <div key={i} style={{
+                background: 'rgba(255,255,255,.05)', borderRadius: 6,
+                padding: '6px 6px', textAlign: 'center', minWidth: 0,
+              }}>
+                <div style={{
+                  fontFamily: bask, fontSize: 13, fontWeight: 700, color: p.color, lineHeight: 1,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                  ${p.amt.toLocaleString()}
+                </div>
+                <div style={{
+                  fontSize: 6, letterSpacing: 1.5, textTransform: 'uppercase',
+                  color: 'rgba(255,255,255,.5)', fontWeight: 700, marginTop: 3,
+                }}>
+                  {p.label}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Row 4: Masters Leaderboard button — only when scores are live */}
+          {liveMode && (
+            <button
+              type="button"
+              onClick={() => setLeaderboardOpen(true)}
+              style={{
+                marginTop: 10,
+                width: '100%',
+                background: 'rgba(255,255,255,.08)',
+                border: 'none',
+                borderRadius: 6,
+                padding: '11px 12px',
+                color: '#fff',
+                fontFamily: sans,
+                fontSize: 11,
+                letterSpacing: 2,
+                textTransform: 'uppercase',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+              }}
+            >
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: '#4ade80',
+                  boxShadow: '0 0 6px rgba(74, 222, 128, .8)',
+                  animation: 'ticker-dot-pulse 1.6s ease-in-out infinite',
+                }}
+              />
+              Masters Leaderboard
+              <span style={{ fontSize: 10, opacity: 0.7 }}>▾</span>
+            </button>
+          )}
         </div>
 
         {/* Live golfer ticker — only renders when scores are live */}
         <TickerBar golferStats={golferStats} show={liveMode} />
-
-        {/* Mobile podium cards */}
-        <div className="mobile-only" style={{ maxWidth: 960, margin: '0 auto', padding: '14px 16px 0' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
-            {podium.map((p, i) => (
-              <div key={i} style={{
-                background: '#fff', borderRadius: 8, padding: '10px 8px',
-                border: '1px solid #e0dbd2', textAlign: 'center',
-                boxShadow: '0 1px 3px rgba(0,0,0,.04)', minWidth: 0,
-              }}>
-                <div style={{
-                  fontSize: 8, letterSpacing: 1.5, textTransform: 'uppercase',
-                  color: '#8b7d6b', fontWeight: 700, marginBottom: 4,
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>{p.label}</div>
-                <div style={{
-                  fontFamily: bask, fontSize: 16, fontWeight: 700, color: p.color,
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>${p.amt.toLocaleString()}</div>
-              </div>
-            ))}
-          </div>
-        </div>
 
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px' }}>
           {/* Title block — hidden on mobile */}
@@ -877,6 +976,13 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
           </div>
         </footer>
       </div>
+
+      {/* Masters golfer leaderboard overlay — shared across desktop + mobile */}
+      <MastersLeaderboardOverlay
+        open={leaderboardOpen && liveMode}
+        onClose={() => setLeaderboardOpen(false)}
+        golferStats={golferStats}
+      />
     </div>
   );
 }
