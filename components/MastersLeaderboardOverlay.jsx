@@ -509,7 +509,7 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
             }}
           >
             <div>Pos</div>
-            <div>Name</div>
+            <div>Player</div>
             <div style={{ textAlign: 'right' }}>Score</div>
             <div style={{ textAlign: 'right' }}>Thru</div>
           </div>
@@ -585,18 +585,34 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
                   >
                     {posLabel}
                   </div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: '#1a2e1a',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      minWidth: 0,
-                    }}
-                  >
-                    {g.name}
+                  <div style={{ minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: '#1a2e1a',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {g.name}
+                    </div>
+                    {!isOut && (
+                      <div
+                        style={{
+                          fontSize: 9,
+                          color: '#b5a999',
+                          marginTop: 2,
+                          letterSpacing: 0.3,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {isExpanded ? 'Tap to close' : 'Tap for scorecard'}
+                      </div>
+                    )}
                   </div>
                   <div
                     style={{
