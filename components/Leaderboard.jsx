@@ -292,7 +292,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
   ];
 
   return (
-    <div style={{ minHeight: '100vh', overflowX: 'hidden', maxWidth: '100vw' }}>
+    <div style={{ minHeight: '100vh', overflowX: 'clip', maxWidth: '100vw' }}>
       {/* STICKY HEADER */}
       <div className="sticky-header">
         {/* Top bar — desktop */}
