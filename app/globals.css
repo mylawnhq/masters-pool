@@ -90,7 +90,7 @@ body {
 .ticker-track {
   display: flex;
   width: max-content;
-  animation: ticker-scroll 125s linear infinite;
+  animation: ticker-scroll 156s linear infinite;
   will-change: transform;
 }
 .ticker-bar:hover .ticker-track {
@@ -134,9 +134,6 @@ body {
 @keyframes ticker-scroll {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
-}
-@media (max-width: 640px) {
-  .ticker-track { animation-duration: 156s; }
 }
 @keyframes ticker-dot-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
