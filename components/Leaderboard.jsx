@@ -564,7 +564,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
           </div>
 
           {/* Live scoring disclaimer — only while in live score-to-par mode */}
-          {liveMode && !hasEarnings && (
+          {liveMode && (
             <div
               style={{
                 background: '#f0ede5',
