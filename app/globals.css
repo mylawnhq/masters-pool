@@ -90,7 +90,7 @@ body {
 .ticker-track {
   display: flex;
   width: max-content;
-  animation: ticker-scroll 50s linear infinite;
+  animation: ticker-scroll 100s linear infinite;
   will-change: transform;
 }
 .ticker-bar:hover .ticker-track {
