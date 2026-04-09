@@ -1,6 +1,7 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { logEvent } from '@/lib/analytics';
 
 const fmt = n => n >= 1e6 ? `$${(n/1e6).toFixed(2)}M` : n >= 1e3 ? `$${(n/1e3).toFixed(0)}K` : `$${n.toLocaleString()}`;
 const fmtFull = n => `$${n.toLocaleString()}`;
@@ -60,6 +61,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
   const [copiedId, setCopiedId] = useState(null);
 
   const handleShare = (entry) => {
+    logEvent({ eventType: 'share' });
     const pickLines = entry.picks.map(p => `${p.group}: ${p.golfer}`).join('\n');
     const text = `${entry.name}'s Masters Pool Picks:\n${pickLines}\nLow Amateur: ${entry.low_amateur}\nWinning Score: ${entry.winning_score}`;
     const done = () => {
@@ -83,6 +85,22 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
       });
     }
   };
+
+  // Analytics: log a pageview once per mount.
+  useEffect(() => {
+    logEvent({ eventType: 'pageview' });
+  }, []);
+
+  // Analytics: debounced search logging — only fires after the user stops
+  // typing for 1s, and only when the query is 3+ characters.
+  useEffect(() => {
+    const q = search.trim();
+    if (q.length < 3) return;
+    const id = setTimeout(() => {
+      logEvent({ eventType: 'search', searchQuery: q });
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [search]);
 
   // Load favorites from localStorage on mount
   useEffect(() => {
@@ -279,7 +297,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
         {/* Top bar — desktop */}
         <div className="desktop-only" style={{ background: '#006B54', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>
-            Mendoza's Masters Pool • 2026
+            Mendoza's Masters Pool • <a href="/admin" style={{ color: 'inherit', textDecoration: 'none' }}>2026</a>
           </div>
           {(liveMode || hasEarnings) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -302,7 +320,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
               Mendoza's Masters Pool
             </div>
             <div style={{ fontSize: 10, letterSpacing: 2.5, color: 'rgba(255,255,255,.55)', fontWeight: 600 }}>
-              2026
+              <a href="/admin" style={{ color: 'inherit', textDecoration: 'none' }}>2026</a>
             </div>
           </div>
           {(liveMode || hasEarnings) && updatedLabel && (
