@@ -135,6 +135,9 @@ body {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
+@media (max-width: 640px) {
+  .ticker-track { animation-duration: 156s; }
+}
 @keyframes ticker-dot-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%      { opacity: 0.35; transform: scale(0.75); }
