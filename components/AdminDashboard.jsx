@@ -360,8 +360,15 @@ function EmptyNote({ children }) {
   );
 }
 
+function formatHour(h) {
+  if (h === 0) return '12 AM';
+  if (h === 12) return '12 PM';
+  return h < 12 ? `${h} AM` : `${h - 12} PM`;
+}
+
 function HourlyChart({ data }) {
   const max = Math.max(1, ...data);
+  const [hovered, setHovered] = useState(null);
   return (
     <div>
       <div style={{
@@ -370,10 +377,37 @@ function HourlyChart({ data }) {
       }}>
         {data.map((v, h) => {
           const pct = (v / max) * 100;
+          const isHovered = hovered === h;
           return (
-            <div key={h} title={`${h}:00 — ${v}`} style={{
-              height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-            }}>
+            <div
+              key={h}
+              onMouseEnter={() => setHovered(h)}
+              onMouseLeave={() => setHovered(c => (c === h ? null : c))}
+              style={{
+                height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+                position: 'relative', cursor: 'default',
+              }}
+            >
+              {isHovered && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: '100%',
+                  left: '50%',
+                  transform: 'translate(-50%, -6px)',
+                  background: '#1a2e1a',
+                  color: '#fff',
+                  fontSize: 11,
+                  fontFamily: sans,
+                  padding: '5px 9px',
+                  borderRadius: 5,
+                  whiteSpace: 'nowrap',
+                  pointerEvents: 'none',
+                  zIndex: 2,
+                  boxShadow: '0 2px 6px rgba(0,0,0,.15)',
+                }}>
+                  {formatHour(h)} — {v} visit{v === 1 ? '' : 's'}
+                </div>
+              )}
               <div style={{
                 height: `${pct}%`,
                 minHeight: v > 0 ? 2 : 0,
