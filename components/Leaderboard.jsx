@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { logEvent } from '@/lib/analytics';
+import TickerBar from './TickerBar';
 
 const fmt = n => n >= 1e6 ? `$${(n/1e6).toFixed(2)}M` : n >= 1e3 ? `$${(n/1e3).toFixed(0)}K` : `$${n.toLocaleString()}`;
 const fmtFull = n => `$${n.toLocaleString()}`;
@@ -339,6 +340,9 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
             </div>
           </div>
         </div>
+
+        {/* Live golfer ticker — only renders when scores are live */}
+        <TickerBar golferStats={golferStats} show={liveMode} />
 
         {/* Mobile podium cards */}
         <div className="mobile-only" style={{ maxWidth: 960, margin: '0 auto', padding: '14px 16px 0' }}>

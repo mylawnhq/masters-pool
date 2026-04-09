@@ -80,6 +80,66 @@ body {
   }
 }
 
+/* Golfer ticker bar */
+.ticker-bar {
+  background: #fff;
+  border-bottom: 1px solid #e0dbd2;
+  overflow: hidden;
+  width: 100%;
+}
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 50s linear infinite;
+  will-change: transform;
+}
+.ticker-bar:hover .ticker-track {
+  animation-play-state: paused;
+}
+.ticker-group {
+  display: flex;
+  flex-shrink: 0;
+}
+.ticker-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #006B54;
+  color: #fff;
+  padding: 0 14px;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.ticker-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.8);
+  animation: ticker-dot-pulse 1.6s ease-in-out infinite;
+}
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-right: 1px solid #eee9e0;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes ticker-dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.35; transform: scale(0.75); }
+}
+
 /* Show/hide helpers */
 .mobile-only { display: none; }
 @media (max-width: 640px) {
