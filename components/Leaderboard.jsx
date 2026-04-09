@@ -562,6 +562,42 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
             {!liveMode && hasEarnings && <div style={{ textAlign: 'right' }}>Score</div>}
             <div />
           </div>
+
+          {/* Live scoring disclaimer — only while in live score-to-par mode */}
+          {liveMode && !hasEarnings && (
+            <div
+              style={{
+                background: '#f0ede5',
+                borderBottom: '1px solid #e0dbd2',
+                padding: '7px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                color: '#8b7d6b',
+                fontStyle: 'italic',
+                fontFamily: sans,
+                textAlign: 'center',
+              }}
+            >
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: '#d4af37',
+                  flexShrink: 0,
+                }}
+              />
+              <span className="desktop-only" style={{ fontSize: 11 }}>
+                Current rankings based on aggregate team score · Final results determined by combined tournament earnings
+              </span>
+              <span className="mobile-only" style={{ fontSize: 9 }}>
+                Current rankings by team score · Final results by tournament earnings
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
