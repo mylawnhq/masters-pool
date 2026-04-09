@@ -35,8 +35,8 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
   const [copiedId, setCopiedId] = useState(null);
 
   const handleShare = (entry) => {
-    const golferList = entry.picks.map(p => p.golfer).join(', ');
-    const text = `${entry.name}'s Masters Pool picks: ${golferList} | TB: ${entry.low_amateur}, ${entry.winning_score}`;
+    const pickLines = entry.picks.map(p => `${p.group}: ${p.golfer}`).join('\n');
+    const text = `${entry.name}'s Masters Pool Picks:\n${pickLines}\nLow Amateur: ${entry.low_amateur}\nWinning Score: ${entry.winning_score}`;
     const done = () => {
       setCopiedId(entry.id);
       setTimeout(() => setCopiedId(c => (c === entry.id ? null : c)), 2000);
