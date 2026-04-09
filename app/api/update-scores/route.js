@@ -9,6 +9,10 @@ export const maxDuration = 10;
 // ESPN's Masters leaderboard feed. The event query pins it to the 2026 Masters.
 const ESPN_EVENT_ID = '401811941';
 const ESPN_URL = `https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?event=${ESPN_EVENT_ID}`;
+// ESPN's hole-by-hole scorecard endpoint. The player ID in the path is a no-op
+// for this endpoint — the response contains every competitor in the field, so
+// one fetch covers the whole leaderboard.
+const ESPN_SCORECARDS_URL = `https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard/players/10046/scorecard?event=${ESPN_EVENT_ID}`;
 const FETCH_TIMEOUT_MS = 7000;
 
 function normalizeStatus(raw) {
@@ -42,6 +46,66 @@ function formatTeeTime(iso) {
   const displayHour = easternHours % 12 === 0 ? 12 : easternHours % 12;
   const mm = String(minutes).padStart(2, '0');
   return `${displayHour}:${mm} ${period}`;
+}
+
+// Fetches hole-by-hole scores for all competitors in one shot. The response
+// shape mirrors the leaderboard but each round (linescores[period]) contains
+// a nested linescores[] array, one entry per hole played so far. Returns a
+// Map keyed by lowercased golfer name → array of 18 hole entries
+// ({ strokes, scoreType }), or `null` if the call fails. Failures must NOT
+// break the main update flow.
+async function fetchScorecardsFromESPN() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  try {
+    const res = await fetch(ESPN_SCORECARDS_URL, {
+      headers: { 'User-Agent': 'masters-pool-scraper/1.0' },
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      throw new Error(`ESPN scorecard fetch failed: ${res.status} ${res.statusText}`);
+    }
+    const json = await res.json();
+    const competitors = json?.competitions?.[0]?.competitors || [];
+    if (competitors.length === 0) return null;
+
+    const map = new Map();
+    competitors.forEach(c => {
+      const name = c?.athlete?.displayName || c?.athlete?.fullName;
+      if (!name) return;
+      // Round 1 sits in linescores[0]; the inner linescores[] is the hole list.
+      const round1 = c?.linescores?.[0];
+      const holeEntries = Array.isArray(round1?.linescores) ? round1.linescores : [];
+
+      // Build a fixed-length 18-slot array. Each slot is either null
+      // (hole not yet played) or { strokes, scoreType } where scoreType is
+      // the par-relative string ESPN returns ("E", "-1", "+1", "+2", ...).
+      const holes = new Array(18).fill(null);
+      holeEntries.forEach(h => {
+        const idx = (typeof h?.period === 'number' ? h.period : parseInt(h?.period, 10)) - 1;
+        if (idx < 0 || idx >= 18) return;
+        const strokes = typeof h?.value === 'number'
+          ? h.value
+          : (h?.displayValue != null ? parseInt(h.displayValue, 10) : null);
+        if (!Number.isFinite(strokes)) return;
+        holes[idx] = {
+          strokes,
+          scoreType: h?.scoreType?.displayValue ?? null,
+        };
+      });
+
+      map.set(name.toLowerCase(), holes);
+    });
+    return map;
+  } catch (err) {
+    // Swallow — caller will treat as "no scorecards this cycle".
+    console.warn('[update-scores] scorecards fetch failed:', err?.message || err);
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function fetchFromESPN() {
@@ -153,17 +217,40 @@ export async function GET(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    const leaderboard = await fetchFromESPN();
+    // Run leaderboard + scorecard fetches in parallel. The scorecard call is
+    // best-effort: if it times out or 500s, we still upsert the leaderboard
+    // and just leave round1_scores untouched on existing rows.
+    const [leaderboard, scorecards] = await Promise.all([
+      fetchFromESPN(),
+      fetchScorecardsFromESPN(),
+    ]);
     const source = 'espn';
 
     const earnings = calculateEarnings(leaderboard, purse);
 
     const now = new Date().toISOString();
-    const lbRows = leaderboard.map(g => ({ ...g, updated_at: now }));
+    // Only stamp round1_scores when the scorecard fetch succeeded — otherwise
+    // we leave the existing column value alone instead of nuking it to null.
+    const lbRows = leaderboard.map(g => {
+      const row = { ...g, updated_at: now };
+      if (scorecards) {
+        row.round1_scores = scorecards.get(g.golfer_name.toLowerCase()) ?? null;
+      }
+      return row;
+    });
 
-    const { error: lbErr } = await supabase
+    let { error: lbErr } = await supabase
       .from('golfer_leaderboard')
       .upsert(lbRows, { onConflict: 'golfer_name' });
+    // If the round1_scores column hasn't been migrated yet, retry without it
+    // so live scoring keeps working until the DDL is applied.
+    if (lbErr && /round1_scores/i.test(lbErr.message || '')) {
+      const slim = lbRows.map(({ round1_scores, ...rest }) => rest);
+      const retry = await supabase
+        .from('golfer_leaderboard')
+        .upsert(slim, { onConflict: 'golfer_name' });
+      lbErr = retry.error;
+    }
     if (lbErr) throw new Error(`golfer_leaderboard upsert failed: ${lbErr.message}`);
 
     const { error: delErr } = await supabase
@@ -190,6 +277,7 @@ export async function GET(request) {
       success: true,
       source,
       golfersUpdated: leaderboard.length,
+      scorecardsLoaded: scorecards ? scorecards.size : 0,
       leader: leader
         ? {
             name: leader.golfer_name,

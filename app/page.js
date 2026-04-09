@@ -42,9 +42,24 @@ async function getData() {
   });
 
   // Live golfer stats — drives aggregate score-to-par ranking T–Sat.
-  const { data: golferRows } = await supabase
-    .from('golfer_leaderboard')
-    .select('golfer_name, position, score_to_par, thru, status, updated_at');
+  // round1_scores feeds the expandable scorecard inside the leaderboard overlay.
+  // The select is wrapped so a missing column (pre-migration) doesn't break SSR.
+  let golferRows = null;
+  try {
+    const res = await supabase
+      .from('golfer_leaderboard')
+      .select('golfer_name, position, score_to_par, thru, status, round1_scores, updated_at');
+    if (res.error && /round1_scores/i.test(res.error.message || '')) {
+      const retry = await supabase
+        .from('golfer_leaderboard')
+        .select('golfer_name, position, score_to_par, thru, status, updated_at');
+      golferRows = retry.data;
+    } else {
+      golferRows = res.data;
+    }
+  } catch {
+    golferRows = null;
+  }
 
   const golferStats = {};
   let lastUpdated = null;
@@ -54,6 +69,7 @@ async function getData() {
       score_to_par: row.score_to_par,
       thru: row.thru,
       status: row.status,
+      round1_scores: row.round1_scores ?? null,
     };
     if (row.updated_at && (!lastUpdated || row.updated_at > lastUpdated)) {
       lastUpdated = row.updated_at;

@@ -1,8 +1,14 @@
 'use client';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const bask = "'Libre Baskerville', Georgia, serif";
 const sans = "'Source Sans 3', 'Helvetica Neue', sans-serif";
+
+// Augusta National front 9 + back 9 par values, holes 1–18.
+const AUGUSTA_PARS = [4, 5, 4, 3, 4, 3, 4, 5, 4, 4, 4, 3, 5, 4, 5, 3, 4, 4];
+const PAR_OUT = AUGUSTA_PARS.slice(0, 9).reduce((a, b) => a + b, 0); // 36
+const PAR_IN = AUGUSTA_PARS.slice(9).reduce((a, b) => a + b, 0);    // 36
+const PAR_TOTAL = PAR_OUT + PAR_IN;                                  // 72
 
 function posSortKey(pos) {
   if (pos == null) return 9999;
@@ -26,7 +32,315 @@ function scoreColor(n, status) {
   return '#1a2e1a';
 }
 
+// Render a single hole stroke value with the appropriate Masters-style shape
+// drawn around it: birdie green circle, eagle gold double circle, bogey green
+// square, double-bogey-or-worse red double square. Pars and unplayed holes
+// render plain.
+function HoleCell({ strokes, par }) {
+  if (strokes == null) {
+    return <span style={{ color: '#d9d3c7' }}>—</span>;
+  }
+  const diff = strokes - par;
+  let shape = null;
+  if (diff <= -2) shape = 'eagle';        // double circle gold
+  else if (diff === -1) shape = 'birdie'; // circle green
+  else if (diff === 1) shape = 'bogey';   // square green
+  else if (diff >= 2) shape = 'double';   // double square red
+
+  const SIZE = 22;
+  const numStyle = {
+    fontSize: 12,
+    fontWeight: 700,
+    color: '#1a2e1a',
+    fontFamily: bask,
+    lineHeight: '22px',
+    display: 'inline-block',
+  };
+
+  if (!shape) return <span style={numStyle}>{strokes}</span>;
+
+  const stroke =
+    shape === 'eagle' ? '#d4af37'
+    : shape === 'double' ? '#c0392b'
+    : '#006B54';
+  const isCircle = shape === 'eagle' || shape === 'birdie';
+  const isDouble = shape === 'eagle' || shape === 'double';
+
+  return (
+    <span
+      style={{
+        position: 'relative',
+        display: 'inline-block',
+        width: SIZE,
+        height: SIZE,
+      }}
+    >
+      <span
+        style={{
+          position: 'absolute',
+          inset: 0,
+          border: `1.4px solid ${stroke}`,
+          borderRadius: isCircle ? '50%' : 2,
+          pointerEvents: 'none',
+        }}
+      />
+      {isDouble && (
+        <span
+          style={{
+            position: 'absolute',
+            inset: 3,
+            border: `1.4px solid ${stroke}`,
+            borderRadius: isCircle ? '50%' : 1,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+      <span
+        style={{
+          position: 'absolute',
+          inset: 0,
+          textAlign: 'center',
+          ...numStyle,
+        }}
+      >
+        {strokes}
+      </span>
+    </span>
+  );
+}
+
+function sumStrokes(holes, from, to) {
+  let total = 0;
+  let any = false;
+  for (let i = from; i < to; i++) {
+    if (holes[i] != null) {
+      total += holes[i];
+      any = true;
+    }
+  }
+  return any ? total : null;
+}
+
+// Inline scorecard expansion: front 9 stacked over back 9, both as
+// table-layout: fixed so cells are equal width and seamless.
+function ScorecardExpanded({ holes }) {
+  // Normalize incoming round1_scores into a flat 18-length stroke array.
+  // Accepts either { strokes, scoreType } objects or raw stroke numbers, so
+  // older snapshots without the wrapper still render.
+  const strokes = useMemo(() => {
+    const out = new Array(18).fill(null);
+    if (!Array.isArray(holes)) return out;
+    holes.slice(0, 18).forEach((h, i) => {
+      if (h == null) return;
+      if (typeof h === 'number') {
+        out[i] = Number.isFinite(h) ? h : null;
+      } else if (typeof h === 'object' && Number.isFinite(h.strokes)) {
+        out[i] = h.strokes;
+      }
+    });
+    return out;
+  }, [holes]);
+
+  const outStrokes = sumStrokes(strokes, 0, 9);
+  const inStrokes = sumStrokes(strokes, 9, 18);
+  const totalStrokes =
+    outStrokes != null && inStrokes != null
+      ? outStrokes + inStrokes
+      : outStrokes ?? inStrokes;
+
+  // Total is only meaningful relative to par for the holes actually played.
+  const playedPar = strokes.reduce(
+    (sum, s, i) => (s != null ? sum + AUGUSTA_PARS[i] : sum),
+    0,
+  );
+  const totalDiff =
+    totalStrokes != null && playedPar > 0 ? totalStrokes - playedPar : null;
+  const totalDiffLabel =
+    totalDiff == null
+      ? '—'
+      : totalDiff === 0
+      ? 'E'
+      : totalDiff > 0
+      ? `+${totalDiff}`
+      : `${totalDiff}`;
+  const totalDiffColor =
+    totalDiff == null
+      ? '#8b7d6b'
+      : totalDiff < 0
+      ? '#006B54'
+      : totalDiff > 0
+      ? '#c0392b'
+      : '#1a2e1a';
+
+  const allBlank = strokes.every(s => s == null);
+
+  const cellBase = {
+    border: '1px solid #e8e3d6',
+    padding: '6px 0',
+    textAlign: 'center',
+    fontSize: 11,
+  };
+  const headBase = {
+    ...cellBase,
+    background: '#f0ede5',
+    color: '#8b7d6b',
+    fontWeight: 700,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    fontSize: 9,
+  };
+  const totalCell = {
+    ...cellBase,
+    background: '#f7f4ef',
+    fontFamily: bask,
+    fontWeight: 700,
+    fontSize: 12,
+    color: '#1a2e1a',
+  };
+
+  const renderNine = (start, label, totalForNine, parForNine) => (
+    <table
+      style={{
+        width: '100%',
+        borderCollapse: 'collapse',
+        tableLayout: 'fixed',
+        marginTop: start === 0 ? 0 : 4,
+      }}
+    >
+      <colgroup>
+        <col style={{ width: '13%' }} />
+        {Array.from({ length: 9 }).map((_, i) => (
+          <col key={i} />
+        ))}
+        <col style={{ width: '13%' }} />
+      </colgroup>
+      <thead>
+        <tr>
+          <th style={headBase}>Hole</th>
+          {Array.from({ length: 9 }).map((_, i) => (
+            <th key={i} style={headBase}>
+              {start + i + 1}
+            </th>
+          ))}
+          <th style={headBase}>{label}</th>
+        </tr>
+        <tr>
+          <th style={headBase}>Par</th>
+          {AUGUSTA_PARS.slice(start, start + 9).map((p, i) => (
+            <th key={i} style={headBase}>
+              {p}
+            </th>
+          ))}
+          <th style={headBase}>{parForNine}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style={{ ...cellBase, background: '#f0ede5', color: '#8b7d6b', fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Score
+          </td>
+          {Array.from({ length: 9 }).map((_, i) => {
+            const hi = start + i;
+            return (
+              <td key={i} style={{ ...cellBase, background: '#fff', height: 30 }}>
+                <HoleCell strokes={strokes[hi]} par={AUGUSTA_PARS[hi]} />
+              </td>
+            );
+          })}
+          <td style={totalCell}>
+            {totalForNine != null ? totalForNine : '—'}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  );
+
+  return (
+    <div
+      style={{
+        background: '#faf8f4',
+        borderTop: '1px solid #eee9e0',
+        borderBottom: '1px solid #eee9e0',
+        padding: '12px 14px',
+      }}
+    >
+      {allBlank ? (
+        <div
+          style={{
+            textAlign: 'center',
+            color: '#8b7d6b',
+            fontStyle: 'italic',
+            fontSize: 12,
+            padding: '4px 0',
+          }}
+        >
+          No round 1 holes recorded yet
+        </div>
+      ) : (
+        <>
+          {renderNine(0, 'Out', outStrokes, PAR_OUT)}
+          {renderNine(9, 'In', inStrokes, PAR_IN)}
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: 10,
+              padding: '8px 12px',
+              background: '#fff',
+              border: '1px solid #e8e3d6',
+              borderRadius: 4,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 9,
+                letterSpacing: 1.5,
+                textTransform: 'uppercase',
+                color: '#8b7d6b',
+                fontWeight: 700,
+              }}
+            >
+              Round 1 Total
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+              <span
+                style={{
+                  fontFamily: bask,
+                  fontWeight: 700,
+                  fontSize: 16,
+                  color: '#1a2e1a',
+                }}
+              >
+                {totalStrokes != null ? totalStrokes : '—'}
+              </span>
+              <span
+                style={{
+                  fontFamily: bask,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  color: totalDiffColor,
+                }}
+              >
+                {totalDiffLabel}
+              </span>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function MastersLeaderboardOverlay({ open, onClose, golferStats }) {
+  const [expanded, setExpanded] = useState(null);
+
+  // Reset expansion when the overlay closes so reopening starts collapsed.
+  useEffect(() => {
+    if (!open) setExpanded(null);
+  }, [open]);
+
   // Lock body scroll while open, close on Escape.
   useEffect(() => {
     if (!open) return;
@@ -50,6 +364,7 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
         score_to_par: s?.score_to_par ?? null,
         thru: s?.thru ?? null,
         status: s?.status ?? 'active',
+        round1_scores: s?.round1_scores ?? null,
       }))
       .sort((a, b) => {
         const aOut = a.status === 'cut' || a.status === 'withdrawn';
@@ -215,65 +530,82 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
                 ? 'CUT'
                 : 'WD'
               : g.position || '—';
+            const rowKey = `${g.name}-${i}`;
+            const isExpanded = expanded === rowKey;
             return (
-              <div
-                key={`${g.name}-${i}`}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '44px 1fr 54px 54px',
-                  gap: 8,
-                  padding: '10px 16px',
-                  alignItems: 'center',
-                  borderLeft: `3px solid ${isTop3 ? '#d4af37' : 'transparent'}`,
-                  borderBottom: '1px solid #f0ede5',
-                  background: i % 2 === 0 ? '#fff' : '#faf8f4',
-                  opacity: isOut ? 0.55 : 1,
-                }}
-              >
-                <div
+              <div key={rowKey}>
+                <button
+                  type="button"
+                  onClick={() => setExpanded(isExpanded ? null : rowKey)}
+                  aria-expanded={isExpanded}
                   style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: isTop3 ? '#d4af37' : '#8b7d6b',
-                    fontFamily: bask,
-                    whiteSpace: 'nowrap',
+                    width: '100%',
+                    display: 'grid',
+                    gridTemplateColumns: '44px 1fr 54px 54px',
+                    gap: 8,
+                    padding: '10px 16px',
+                    alignItems: 'center',
+                    borderLeft: `3px solid ${isTop3 ? '#d4af37' : 'transparent'}`,
+                    borderBottom: '1px solid #f0ede5',
+                    background: isExpanded
+                      ? '#f7f4ef'
+                      : i % 2 === 0 ? '#fff' : '#faf8f4',
+                    opacity: isOut ? 0.55 : 1,
+                    border: 'none',
+                    borderTop: 'none',
+                    borderRight: 'none',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    font: 'inherit',
+                    color: 'inherit',
                   }}
                 >
-                  {posLabel}
-                </div>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: '#1a2e1a',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    minWidth: 0,
-                  }}
-                >
-                  {g.name}
-                </div>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: scoreColor(g.score_to_par, g.status),
-                    fontFamily: bask,
-                    textAlign: 'right',
-                  }}
-                >
-                  {g.score_to_par == null ? '—' : fmtScore(g.score_to_par)}
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: '#8b7d6b',
-                    textAlign: 'right',
-                  }}
-                >
-                  {g.thru || '—'}
-                </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: isTop3 ? '#d4af37' : '#8b7d6b',
+                      fontFamily: bask,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {posLabel}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#1a2e1a',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      minWidth: 0,
+                    }}
+                  >
+                    {g.name}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: scoreColor(g.score_to_par, g.status),
+                      fontFamily: bask,
+                      textAlign: 'right',
+                    }}
+                  >
+                    {g.score_to_par == null ? '—' : fmtScore(g.score_to_par)}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: '#8b7d6b',
+                      textAlign: 'right',
+                    }}
+                  >
+                    {g.thru || '—'}
+                  </div>
+                </button>
+                {isExpanded && <ScorecardExpanded holes={g.round1_scores} />}
               </div>
             );
           })}
