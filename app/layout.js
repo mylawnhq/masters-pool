@@ -1,5 +1,6 @@
 import './globals.css';
 import { Analytics } from '@vercel/analytics/react';
+import ServiceWorkerRegister from '../components/ServiceWorkerRegister';
 
 export const metadata = {
   title: "Mendoza's Masters Pool — 2026",
@@ -47,6 +48,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         {children}
+        <ServiceWorkerRegister />
         <Analytics />
       </body>
     </html>

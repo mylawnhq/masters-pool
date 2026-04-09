@@ -79,8 +79,11 @@ async function getData() {
   return { entries: entries || [], earnings, golferStats, lastUpdated, pickCounts };
 }
 
-// Revalidate every 60 seconds so new data shows without redeploy
-export const revalidate = 60;
+// Render dynamically on every request so PWAs added to a phone home screen
+// always pull the latest HTML + bundles. Combined with no-store headers in
+// next.config.js, this prevents iOS WebKit from serving stale shell content.
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function Home() {
   const { entries, earnings, golferStats, lastUpdated, pickCounts } = await getData();
