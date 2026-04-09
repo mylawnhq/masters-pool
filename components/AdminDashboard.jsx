@@ -367,7 +367,9 @@ function formatHour(h) {
 }
 
 function HourlyChart({ data }) {
-  const max = Math.max(1, ...data);
+  const rawMax = Math.max(...data);
+  const max = Math.max(1, rawMax);
+  const peakIndex = rawMax > 0 ? data.indexOf(rawMax) : -1;
   const [hovered, setHovered] = useState(null);
   return (
     <div>
@@ -378,6 +380,8 @@ function HourlyChart({ data }) {
         {data.map((v, h) => {
           const pct = (v / max) * 100;
           const isHovered = hovered === h;
+          const isPeak = h === peakIndex;
+          const opacity = isPeak ? 1 : 0.4 + 0.6 * (v / max);
           return (
             <div
               key={h}
@@ -410,10 +414,11 @@ function HourlyChart({ data }) {
               )}
               <div style={{
                 height: `${pct}%`,
-                minHeight: v > 0 ? 2 : 0,
-                background: v > 0 ? 'linear-gradient(180deg, #006B54, #2a9d6e)' : '#f0ede5',
+                minHeight: 3,
+                background: isPeak ? '#d4af37' : '#006B54',
+                opacity,
                 borderRadius: '2px 2px 0 0',
-                transition: 'height .3s ease',
+                transition: 'height .3s ease, opacity .3s ease',
               }} />
             </div>
           );
