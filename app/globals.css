@@ -140,6 +140,12 @@ body {
   50%      { opacity: 0.35; transform: scale(0.75); }
 }
 
+/* Entry row subtitle: second golfer hidden on mobile */
+.row-sub-second-golfer { display: inline; }
+@media (max-width: 640px) {
+  .row-sub-second-golfer { display: none; }
+}
+
 /* Show/hide helpers */
 .mobile-only { display: none; }
 @media (max-width: 640px) {

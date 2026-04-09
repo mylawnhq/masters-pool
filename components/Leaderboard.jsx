@@ -535,9 +535,9 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                   <div style={{ minWidth: 0, overflow: 'hidden' }}>
                     <div style={{ fontSize: 14, fontWeight: ranked3 ? 700 : 500, color: ranked3 ? '#006B54' : '#1a2e1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entry.name}</div>
                     <div style={{ fontSize: 11, color: '#a09888', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {liveMode
-                        ? `${entry.picks[0].golfer} • ${entry.picks[1].golfer}`
-                        : `${entry.picks[0].golfer} • ${entry.picks[1].golfer} • +4 more`}
+                      {entry.picks[0].golfer}
+                      <span className="row-sub-second-golfer"> • {entry.picks[1].golfer}</span>
+                      <span style={{ color: '#b5a999' }}> · View picks →</span>
                     </div>
                   </div>
                   {liveMode && (
