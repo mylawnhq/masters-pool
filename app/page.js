@@ -28,39 +28,52 @@ async function getData() {
   // When the feature flag is off, the site behaves exactly as it did pre-tournament:
   // entries A–Z, no earnings, no rankings, no timestamp, no polling.
   if (!SCORES_LIVE) {
-    return { entries: entries || [], earnings: {}, lastUpdated: null, pickCounts };
+    return { entries: entries || [], earnings: {}, golferStats: {}, lastUpdated: null, pickCounts };
   }
 
+  // Earnings: still fetched so the calculation pipeline keeps working,
+  // but the UI is on aggregate-score mode for now and ignores this.
   const { data: earningsData } = await supabase
     .from('golfer_earnings')
     .select('golfer_name, earnings');
-
   const earnings = {};
   (earningsData || []).forEach(row => {
     earnings[row.golfer_name] = Number(row.earnings);
   });
 
-  // Most recent leaderboard write — drives the "Scores updated…" timestamp.
-  const { data: latest } = await supabase
+  // Live golfer stats — drives aggregate score-to-par ranking T–Sat.
+  const { data: golferRows } = await supabase
     .from('golfer_leaderboard')
-    .select('updated_at')
-    .order('updated_at', { ascending: false })
-    .limit(1);
-  const lastUpdated = latest?.[0]?.updated_at || null;
+    .select('golfer_name, position, score_to_par, thru, status, updated_at');
 
-  return { entries: entries || [], earnings, lastUpdated, pickCounts };
+  const golferStats = {};
+  let lastUpdated = null;
+  (golferRows || []).forEach(row => {
+    golferStats[row.golfer_name] = {
+      position: row.position,
+      score_to_par: row.score_to_par,
+      thru: row.thru,
+      status: row.status,
+    };
+    if (row.updated_at && (!lastUpdated || row.updated_at > lastUpdated)) {
+      lastUpdated = row.updated_at;
+    }
+  });
+
+  return { entries: entries || [], earnings, golferStats, lastUpdated, pickCounts };
 }
 
 // Revalidate every 60 seconds so new data shows without redeploy
 export const revalidate = 60;
 
 export default async function Home() {
-  const { entries, earnings, lastUpdated, pickCounts } = await getData();
+  const { entries, earnings, golferStats, lastUpdated, pickCounts } = await getData();
   return (
     <PasswordGate>
       <Leaderboard
         entries={entries}
         earnings={earnings}
+        golferStats={golferStats}
         lastUpdated={lastUpdated}
         pickCounts={pickCounts}
         scoresLive={SCORES_LIVE}

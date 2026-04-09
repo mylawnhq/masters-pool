@@ -8,6 +8,30 @@ const medal = r => r === 1 ? '🏆' : r === 2 ? '🥈' : r === 3 ? '🥉' : null
 const bask = "'Libre Baskerville', Georgia, serif";
 const sans = "'Source Sans 3', 'Helvetica Neue', sans-serif";
 
+// Score-to-par formatting and color used by the live aggregate UI.
+const fmtPar = n => {
+  if (n == null) return '—';
+  if (n === 0) return 'E';
+  return n > 0 ? `+${n}` : `${n}`;
+};
+const parColor = n => {
+  if (n == null) return '#8b7d6b';
+  if (n < 0) return '#006B54';
+  if (n > 0) return '#c0392b';
+  return '#1a2e1a';
+};
+// Pick-card top bar color, keyed off golfer status / score-to-par.
+const cardBarColor = (stat) => {
+  if (!stat) return '#d9d3c7';
+  if (stat.status === 'cut' || stat.status === 'withdrawn') return '#c0392b';
+  const s = stat.score_to_par;
+  if (s == null) return '#d9d3c7';
+  if (s <= -8) return '#006B54';
+  if (s <= -3) return '#2a9d6e';
+  if (s <= 2)  return '#8bb89e';
+  return '#d9d3c7';
+};
+
 function timeAgo(iso) {
   if (!iso) return null;
   const diff = Math.max(0, Date.now() - new Date(iso).getTime());
@@ -24,10 +48,11 @@ function timeAgo(iso) {
 
 const FAVORITES_KEY = 'masters-pool-favorites';
 
-export default function Leaderboard({ entries, earnings: initialEarnings, lastUpdated: initialLastUpdated, pickCounts = {}, scoresLive }) {
+export default function Leaderboard({ entries, earnings: initialEarnings, golferStats: initialGolferStats, lastUpdated: initialLastUpdated, pickCounts = {}, scoresLive }) {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(null);
   const [earnings, setEarnings] = useState(initialEarnings || {});
+  const [golferStats, setGolferStats] = useState(initialGolferStats || {});
   const [lastUpdated, setLastUpdated] = useState(initialLastUpdated || null);
   const [, setTick] = useState(0); // re-render so "X minutes ago" stays fresh
   const [favorites, setFavorites] = useState([]);
@@ -90,37 +115,55 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
   const favSet = useMemo(() => new Set(favorites), [favorites]);
 
   const hasEarnings = Object.keys(earnings).length > 0;
+  const hasLiveScores = Object.keys(golferStats).length > 0;
+  // Live aggregate-score mode: T–Sat, ranking by sum of golfer score_to_par.
+  // Earnings mode is intentionally not surfaced yet — it'll be flipped on Sunday.
+  const liveMode = scoresLive && hasLiveScores;
   const totalEntries = entries.length;
   const poolPurse = totalEntries * 25;
 
-  // Live polling: every 2 minutes, but only on Sunday, only when the
-  // tournament is live (scoresLive flag on AND earnings exist).
+  // Live polling: every 2 minutes whenever the tournament is live.
+  // Pulls golfer_leaderboard for aggregate scoring; earnings come along for
+  // free so the Sunday flip-over doesn't need a code change here.
   useEffect(() => {
-    if (!scoresLive || !hasEarnings) return;
+    if (!scoresLive) return;
     if (typeof window === 'undefined') return;
-    if (new Date().getDay() !== 0) return; // 0 = Sunday
 
     let cancelled = false;
     async function refresh() {
       try {
-        const [{ data: earningsData }, { data: latest }] = await Promise.all([
+        const [{ data: golferRows }, { data: earningsData }] = await Promise.all([
+          supabase.from('golfer_leaderboard').select('golfer_name, position, score_to_par, thru, status, updated_at'),
           supabase.from('golfer_earnings').select('golfer_name, earnings'),
-          supabase.from('golfer_leaderboard').select('updated_at').order('updated_at', { ascending: false }).limit(1),
         ]);
         if (cancelled) return;
+        if (golferRows) {
+          const nextStats = {};
+          let newest = null;
+          golferRows.forEach(r => {
+            nextStats[r.golfer_name] = {
+              position: r.position,
+              score_to_par: r.score_to_par,
+              thru: r.thru,
+              status: r.status,
+            };
+            if (r.updated_at && (!newest || r.updated_at > newest)) newest = r.updated_at;
+          });
+          setGolferStats(nextStats);
+          if (newest) setLastUpdated(newest);
+        }
         if (earningsData) {
           const next = {};
           earningsData.forEach(r => { next[r.golfer_name] = Number(r.earnings); });
           setEarnings(next);
         }
-        if (latest?.[0]?.updated_at) setLastUpdated(latest[0].updated_at);
       } catch (e) {
         // swallow — we'll try again on the next tick
       }
     }
     const id = setInterval(refresh, 120_000);
     return () => { cancelled = true; clearInterval(id); };
-  }, [scoresLive, hasEarnings]);
+  }, [scoresLive]);
 
   // Tick once a minute so the "X minutes ago" label stays current.
   useEffect(() => {
@@ -145,10 +188,31 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
       const total = hasEarnings
         ? picks.reduce((s, p) => s + (earnings[p.golfer] || 0), 0)
         : null;
-      return { ...e, picks, total };
+      // Aggregate team score-to-par. Cut/withdrawn golfers contribute 0.
+      let aggregate = null;
+      if (liveMode) {
+        aggregate = picks.reduce((s, p) => {
+          const stat = golferStats[p.golfer];
+          if (!stat) return s;
+          if (stat.status === 'cut' || stat.status === 'withdrawn') return s;
+          return s + (stat.score_to_par || 0);
+        }, 0);
+      }
+      return { ...e, picks, total, aggregate };
     });
 
-    if (hasEarnings) {
+    if (liveMode) {
+      // Lower aggregate = better. Tied entries share a rank ("T2"); the
+      // displayed tiebreakers (low am, winning score) are resolved by humans
+      // until the tournament concludes.
+      list.sort((a, b) => a.aggregate - b.aggregate);
+      list.forEach((e, i) => {
+        e.rank = (i > 0 && e.aggregate === list[i - 1].aggregate) ? list[i - 1].rank : i + 1;
+      });
+      const rankCounts = {};
+      list.forEach(e => { rankCounts[e.rank] = (rankCounts[e.rank] || 0) + 1; });
+      list.forEach(e => { e.posLabel = (rankCounts[e.rank] > 1 ? 'T' : '') + e.rank; });
+    } else if (hasEarnings) {
       list.sort((a, b) => b.total - a.total);
       let r = 1;
       list.forEach((e, i) => {
@@ -156,11 +220,11 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
         r = i + 2;
       });
     } else {
-      list.forEach(e => { e.rank = null; });
+      list.forEach(e => { e.rank = null; e.posLabel = null; });
       list.sort((a, b) => a.name.localeCompare(b.name));
     }
     return list;
-  }, [entries, earnings, hasEarnings]);
+  }, [entries, earnings, hasEarnings, golferStats, liveMode]);
 
   // Filter by search
   const filtered = useMemo(() => {
@@ -217,7 +281,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
           <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>
             Mendoza's Masters Pool • 2026
           </div>
-          {hasEarnings && (
+          {(liveMode || hasEarnings) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               {updatedLabel && (
                 <span style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,.6)', fontWeight: 500 }}>
@@ -225,7 +289,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
                 </span>
               )}
               <span style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#d4af37', fontWeight: 600 }}>
-                ✦ Results Posted
+                {liveMode && !hasEarnings ? '● Live Scoring' : '✦ Results Posted'}
               </span>
             </div>
           )}
@@ -241,7 +305,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
               2026
             </div>
           </div>
-          {hasEarnings && updatedLabel && (
+          {(liveMode || hasEarnings) && updatedLabel && (
             <div style={{ marginTop: 6, fontSize: 9, letterSpacing: 1, color: 'rgba(255,255,255,.55)', fontWeight: 500 }}>
               Scores updated {updatedLabel}
             </div>
@@ -358,18 +422,23 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
           {/* Column header */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: hasEarnings ? '28px minmax(36px,48px) 1fr minmax(74px,108px) minmax(48px,68px) 24px' : '28px 1fr 24px',
+            gridTemplateColumns: liveMode
+              ? '28px minmax(38px,52px) 1fr minmax(64px,88px) 24px'
+              : hasEarnings
+                ? '28px minmax(36px,48px) 1fr minmax(74px,108px) minmax(48px,68px) 24px'
+                : '28px 1fr 24px',
             padding: '12px 0', fontSize: 9, letterSpacing: 2.5,
             textTransform: 'uppercase', color: '#8b7d6b', fontWeight: 700,
             borderBottom: '1px solid #e0dbd2', marginTop: 14,
           }}>
             <div />
-            {hasEarnings && <div>Pos</div>}
+            {(liveMode || hasEarnings) && <div>Pos</div>}
             <div style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {hasEarnings ? 'Name' : 'Name (A–Z)'}
+              {liveMode ? 'Name' : hasEarnings ? 'Name' : 'Name (A–Z)'}
             </div>
-            {hasEarnings && <div style={{ textAlign: 'right' }}>Earnings</div>}
-            {hasEarnings && <div style={{ textAlign: 'right' }}>Score</div>}
+            {liveMode && <div style={{ textAlign: 'right' }}>Team Score</div>}
+            {!liveMode && hasEarnings && <div style={{ textAlign: 'right' }}>Earnings</div>}
+            {!liveMode && hasEarnings && <div style={{ textAlign: 'right' }}>Score</div>}
             <div />
           </div>
         </div>
@@ -381,15 +450,21 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
         const renderRow = (entry, idx, section) => {
           const expandKey = `${section}:${entry.id}`;
           const open = expanded === expandKey;
-          const top3 = hasEarnings && entry.rank <= 3;
-          const m = hasEarnings ? medal(entry.rank) : null;
+          const ranked3 = (liveMode || hasEarnings) && entry.rank <= 3;
+          const top3 = hasEarnings && !liveMode && entry.rank <= 3;
+          const m = hasEarnings && !liveMode ? medal(entry.rank) : null;
           const isFav = favSet.has(entry.id);
-          const baseBg = top3 ? '#fdfcf8' : idx % 2 === 0 ? '#fff' : '#faf8f4';
+          const baseBg = ranked3 ? '#fdfcf8' : idx % 2 === 0 ? '#fff' : '#faf8f4';
           const leftBorderColor = isFav
             ? '#d4af37'
-            : top3
+            : ranked3
               ? (entry.rank === 1 ? '#d4af37' : entry.rank === 2 ? '#a0a0a0' : '#b87333')
               : 'transparent';
+          const gridCols = liveMode
+            ? '28px minmax(38px,52px) 1fr minmax(64px,88px) 24px'
+            : hasEarnings
+              ? '28px minmax(36px,48px) 1fr minmax(74px,108px) minmax(48px,68px) 24px'
+              : '28px 1fr 24px';
 
           return (
             <div key={`${section}-${entry.id}`}>
@@ -398,7 +473,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
                 onClick={() => setExpanded(open ? null : expandKey)}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: hasEarnings ? '28px minmax(36px,48px) 1fr minmax(74px,108px) minmax(48px,68px) 24px' : '28px 1fr 24px',
+                  gridTemplateColumns: gridCols,
                   alignItems: 'center', padding: '13px 0', cursor: 'pointer',
                   userSelect: 'none', transition: 'background .12s',
                   background: open ? '#f0ede5' : baseBg,
@@ -423,24 +498,40 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
                 >
                   {isFav ? '★' : '☆'}
                 </div>
-                {hasEarnings && (
+                {liveMode && (
+                  <div style={{
+                    fontSize: 15, fontWeight: 700, fontFamily: bask,
+                    color: entry.rank === 1 ? '#d4af37' : entry.rank === 2 ? '#777' : entry.rank === 3 ? '#b87333' : '#8b7d6b',
+                  }}>{entry.posLabel}</div>
+                )}
+                {!liveMode && hasEarnings && (
                     <div style={{
                       fontSize: m ? 19 : 15, fontWeight: 700, fontFamily: bask,
                       color: entry.rank === 1 ? '#d4af37' : entry.rank === 2 ? '#777' : entry.rank === 3 ? '#b87333' : '#8b7d6b',
                     }}>{m || entry.rank}</div>
                   )}
                   <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                    <div style={{ fontSize: 14, fontWeight: top3 ? 700 : 500, color: top3 ? '#006B54' : '#1a2e1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entry.name}</div>
+                    <div style={{ fontSize: 14, fontWeight: ranked3 ? 700 : 500, color: ranked3 ? '#006B54' : '#1a2e1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entry.name}</div>
                     <div style={{ fontSize: 11, color: '#a09888', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {entry.picks[0].golfer} • {entry.picks[1].golfer} • +4 more
+                      {liveMode
+                        ? `${entry.picks[0].golfer} • ${entry.picks[1].golfer}`
+                        : `${entry.picks[0].golfer} • ${entry.picks[1].golfer} • +4 more`}
                     </div>
                   </div>
-                  {hasEarnings && (
+                  {liveMode && (
+                    <div style={{
+                      textAlign: 'right', fontSize: 16, fontWeight: 700, fontFamily: bask,
+                      color: parColor(entry.aggregate),
+                    }}>
+                      {fmtPar(entry.aggregate)}
+                    </div>
+                  )}
+                  {!liveMode && hasEarnings && (
                     <div style={{ textAlign: 'right', fontSize: 15, fontWeight: 700, fontFamily: bask, color: top3 ? '#006B54' : '#1a2e1a' }}>
                       {fmt(entry.total)}
                     </div>
                   )}
-                  {hasEarnings && (
+                  {!liveMode && hasEarnings && (
                     <div style={{ textAlign: 'right', fontSize: 12, color: '#8b7d6b', fontStyle: 'italic' }}>{entry.winning_score}</div>
                   )}
                   <div style={{
@@ -452,15 +543,106 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
 
                 {/* Accordion dropdown */}
                 <div style={{
-                  maxHeight: open ? 640 : 0, opacity: open ? 1 : 0, overflow: 'hidden',
+                  maxHeight: open ? 1200 : 0, opacity: open ? 1 : 0, overflow: 'hidden',
                   transition: 'max-height .4s cubic-bezier(.4,0,.2,1), opacity .3s ease',
                 }}>
                   <div style={{
                     background: 'linear-gradient(180deg, #f0ede5 0%, #f7f4ef 100%)',
                     borderBottom: '1px solid #e0dbd2', padding: '20px 20px 24px',
                   }}>
-                    {/* Earnings summary */}
-                    {hasEarnings && (
+                    {/* Live aggregate hero + mini golfer leaderboard */}
+                    {liveMode && (
+                      <>
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid #e0dbd2',
+                        }}>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: '#8b7d6b', fontWeight: 700 }}>Aggregate Team Score</div>
+                            <div style={{
+                              fontSize: 36, fontWeight: 700, fontFamily: bask,
+                              color: parColor(entry.aggregate), marginTop: 2, lineHeight: 1.05,
+                            }}>{fmtPar(entry.aggregate)}</div>
+                          </div>
+                          <div style={{
+                            width: 52, height: 52, borderRadius: '50%',
+                            background: entry.rank === 1 ? 'linear-gradient(135deg,#d4af37,#f0d060)' : entry.rank === 2 ? 'linear-gradient(135deg,#999,#ccc)' : entry.rank === 3 ? 'linear-gradient(135deg,#b87333,#daa06d)' : '#006B54',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: '#fff', fontSize: 18,
+                            fontWeight: 700, fontFamily: bask, boxShadow: '0 2px 8px rgba(0,0,0,.12)',
+                            flexShrink: 0,
+                          }}>{entry.posLabel}</div>
+                        </div>
+
+                        {/* Mini golfer leaderboard — golfers sorted by score, best first */}
+                        <div style={{ marginBottom: 16 }}>
+                          <div style={{
+                            fontSize: 9, letterSpacing: 2, textTransform: 'uppercase',
+                            color: '#8b7d6b', fontWeight: 700, marginBottom: 8,
+                          }}>Your golfers — by tournament position</div>
+                          <div style={{
+                            background: '#fff', borderRadius: 8, border: '1px solid #e0dbd2',
+                            overflow: 'hidden',
+                          }}>
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'minmax(34px,42px) 1fr minmax(40px,52px) minmax(34px,44px)',
+                              padding: '7px 10px', fontSize: 8, letterSpacing: 1.5,
+                              textTransform: 'uppercase', color: '#8b7d6b', fontWeight: 700,
+                              borderBottom: '1px solid #eee9e0', background: '#faf8f4',
+                            }}>
+                              <div>Pos</div>
+                              <div>Golfer</div>
+                              <div style={{ textAlign: 'right' }}>Score</div>
+                              <div style={{ textAlign: 'right' }}>Thru</div>
+                            </div>
+                            {[...entry.picks]
+                              .map(p => ({ p, stat: golferStats[p.golfer] }))
+                              .sort((a, b) => {
+                                const aCut = a.stat?.status === 'cut' || a.stat?.status === 'withdrawn';
+                                const bCut = b.stat?.status === 'cut' || b.stat?.status === 'withdrawn';
+                                if (aCut !== bCut) return aCut ? 1 : -1;
+                                const av = a.stat?.score_to_par ?? 999;
+                                const bv = b.stat?.score_to_par ?? 999;
+                                return av - bv;
+                              })
+                              .map(({ p, stat }, gi) => {
+                                const isCut = stat?.status === 'cut' || stat?.status === 'withdrawn';
+                                const score = stat?.score_to_par;
+                                return (
+                                  <div key={gi} style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'minmax(34px,42px) 1fr minmax(40px,52px) minmax(34px,44px)',
+                                    padding: '8px 10px', fontSize: 12,
+                                    background: isCut ? '#fdecea' : 'transparent',
+                                    color: isCut ? '#c0392b' : '#1a2e1a',
+                                    borderBottom: gi < 5 ? '1px solid #f3efe6' : 'none',
+                                    alignItems: 'center',
+                                  }}>
+                                    <div style={{ fontFamily: bask, fontWeight: 700, fontSize: 12 }}>
+                                      {isCut ? 'MC' : (stat?.position || '—')}
+                                    </div>
+                                    <div style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      {p.golfer}
+                                    </div>
+                                    <div style={{
+                                      textAlign: 'right', fontFamily: bask, fontWeight: 700,
+                                      color: isCut ? '#c0392b' : parColor(score),
+                                    }}>
+                                      {isCut ? '—' : fmtPar(score)}
+                                    </div>
+                                    <div style={{ textAlign: 'right', fontSize: 11, color: isCut ? '#c0392b' : '#8b7d6b' }}>
+                                      {isCut ? '—' : (stat?.thru || '—')}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {!liveMode && hasEarnings && (
                       <div style={{
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                         marginBottom: 18, paddingBottom: 14, borderBottom: '1px solid #e0dbd2',
@@ -479,13 +661,13 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
                       </div>
                     )}
 
-                    {!hasEarnings && (
+                    {!liveMode && !hasEarnings && (
                       <div style={{
                         marginBottom: 16, padding: '10px 14px', background: '#fff8e1',
                         border: '1px solid #ffe082', borderRadius: 6, fontSize: 12,
                         color: '#f57f17', textAlign: 'center',
                       }}>
-                        Earnings will populate after the tournament concludes Sunday
+                        Live scores will populate when the tournament begins Thursday
                       </div>
                     )}
 
@@ -493,10 +675,19 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
                     <div className="picks-grid">
                       {entry.picks.map((p, i) => {
                         const pe = hasEarnings ? (earnings[p.golfer] || 0) : null;
+                        const stat = liveMode ? golferStats[p.golfer] : null;
+                        const isCut = stat && (stat.status === 'cut' || stat.status === 'withdrawn');
                         const spaceIdx = p.golfer.indexOf(' ');
                         const firstName = spaceIdx === -1 ? p.golfer : p.golfer.slice(0, spaceIdx);
                         const lastName = spaceIdx === -1 ? '' : p.golfer.slice(spaceIdx + 1);
                         const count = pickCounts[p.golfer] || 0;
+                        const barColor = liveMode
+                          ? cardBarColor(stat)
+                          : !hasEarnings ? '#006B54'
+                            : pe >= 1e6 ? '#006B54'
+                            : pe >= 4e5 ? '#2a9d6e'
+                            : pe >= 1e5 ? '#8bb89e'
+                            : '#d9d3c7';
                         return (
                           <div key={i} className="pick-card" style={{
                             background: '#fff', borderRadius: 8,
@@ -506,7 +697,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
                           }}>
                             <div style={{
                               position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-                              background: !hasEarnings ? '#006B54' : pe >= 1e6 ? '#006B54' : pe >= 4e5 ? '#2a9d6e' : pe >= 1e5 ? '#8bb89e' : '#d9d3c7',
+                              background: barColor,
                             }} />
                             <div className="pick-group" style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: '#006B54', fontWeight: 700, marginBottom: 6 }}>
                               {p.group}
@@ -515,10 +706,29 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
                               <div style={{ fontSize: 12, fontWeight: 500 }}>{firstName}</div>
                               {lastName && <div style={{ fontSize: 13, fontWeight: 700 }}>{lastName}</div>}
                             </div>
-                            <div style={{ fontSize: 10, color: '#b5a999', marginBottom: hasEarnings ? 8 : 0 }}>
+                            <div style={{ fontSize: 10, color: '#b5a999', marginBottom: (liveMode || hasEarnings) ? 8 : 0 }}>
                               #{count} picked
                             </div>
-                            {hasEarnings && (
+                            {liveMode && (
+                              <div style={{
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                                gap: 6, marginTop: 2,
+                              }}>
+                                <span style={{
+                                  fontSize: 11, fontFamily: bask, fontWeight: 700,
+                                  color: isCut ? '#c0392b' : '#8b7d6b',
+                                }}>
+                                  {isCut ? 'MC' : (stat?.position || '—')}
+                                </span>
+                                <span style={{
+                                  fontSize: 14, fontWeight: 700, fontFamily: bask,
+                                  color: isCut ? '#c0392b' : parColor(stat?.score_to_par),
+                                }}>
+                                  {isCut ? '—' : fmtPar(stat?.score_to_par)}
+                                </span>
+                              </div>
+                            )}
+                            {!liveMode && hasEarnings && (
                               <div style={{ textAlign: 'right' }}>
                                 <span style={{ fontSize: 14, fontWeight: 700, fontFamily: bask, color: pe >= 5e5 ? '#006B54' : '#1a2e1a' }}>
                                   {pe > 0 ? fmt(pe) : '$0'}
