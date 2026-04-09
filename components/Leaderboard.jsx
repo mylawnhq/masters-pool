@@ -24,7 +24,7 @@ function timeAgo(iso) {
 
 const FAVORITES_KEY = 'masters-pool-favorites';
 
-export default function Leaderboard({ entries, earnings: initialEarnings, lastUpdated: initialLastUpdated, scoresLive }) {
+export default function Leaderboard({ entries, earnings: initialEarnings, lastUpdated: initialLastUpdated, pickCounts = {}, scoresLive }) {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(null);
   const [earnings, setEarnings] = useState(initialEarnings || {});
@@ -32,6 +32,32 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
   const [, setTick] = useState(0); // re-render so "X minutes ago" stays fresh
   const [favorites, setFavorites] = useState([]);
   const [favoritesLoaded, setFavoritesLoaded] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
+
+  const handleShare = (entry) => {
+    const golferList = entry.picks.map(p => p.golfer).join(', ');
+    const text = `${entry.name}'s Masters Pool picks: ${golferList} | TB: ${entry.low_amateur}, ${entry.winning_score}`;
+    const done = () => {
+      setCopiedId(entry.id);
+      setTimeout(() => setCopiedId(c => (c === entry.id ? null : c)), 2000);
+    };
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => {
+        // Fallback for older browsers
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          done();
+        } catch (e) { /* swallow */ }
+      });
+    }
+  };
 
   // Load favorites from localStorage on mount
   useEffect(() => {
@@ -426,7 +452,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
 
                 {/* Accordion dropdown */}
                 <div style={{
-                  maxHeight: open ? 520 : 0, opacity: open ? 1 : 0, overflow: 'hidden',
+                  maxHeight: open ? 640 : 0, opacity: open ? 1 : 0, overflow: 'hidden',
                   transition: 'max-height .4s cubic-bezier(.4,0,.2,1), opacity .3s ease',
                 }}>
                   <div style={{
@@ -467,6 +493,10 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
                     <div className="picks-grid">
                       {entry.picks.map((p, i) => {
                         const pe = hasEarnings ? (earnings[p.golfer] || 0) : null;
+                        const spaceIdx = p.golfer.indexOf(' ');
+                        const firstName = spaceIdx === -1 ? p.golfer : p.golfer.slice(0, spaceIdx);
+                        const lastName = spaceIdx === -1 ? '' : p.golfer.slice(spaceIdx + 1);
+                        const count = pickCounts[p.golfer] || 0;
                         return (
                           <div key={i} className="pick-card" style={{
                             background: '#fff', borderRadius: 8,
@@ -481,8 +511,12 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
                             <div className="pick-group" style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: '#006B54', fontWeight: 700, marginBottom: 6 }}>
                               {p.group}
                             </div>
-                            <div className="pick-name" style={{ fontSize: 14, fontWeight: 600, color: '#1a2e1a', marginBottom: hasEarnings ? 8 : 0, lineHeight: 1.2 }}>
-                              {p.golfer}
+                            <div className="pick-name" style={{ color: '#1a2e1a', marginBottom: 4, lineHeight: 1.2 }}>
+                              <div style={{ fontSize: 12, fontWeight: 500 }}>{firstName}</div>
+                              {lastName && <div style={{ fontSize: 13, fontWeight: 700 }}>{lastName}</div>}
+                            </div>
+                            <div style={{ fontSize: 10, color: '#b5a999', marginBottom: hasEarnings ? 8 : 0 }}>
+                              #{count} picked
                             </div>
                             {hasEarnings && (
                               <div style={{ textAlign: 'right' }}>
@@ -522,6 +556,34 @@ export default function Leaderboard({ entries, earnings: initialEarnings, lastUp
                         </div>
                         <div className="tb-value" style={{ fontSize: 20, fontWeight: 700, color: '#006B54', fontFamily: bask }}>{entry.winning_score}</div>
                       </div>
+                    </div>
+
+                    {/* Share button */}
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+                      {(() => {
+                        const isCopied = copiedId === entry.id;
+                        return (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleShare(entry); }}
+                            style={{
+                              background: isCopied ? '#006B54' : '#fff',
+                              border: '1px solid #d9d3c7',
+                              color: isCopied ? '#fff' : '#006B54',
+                              borderRadius: 6,
+                              padding: '8px 16px',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              fontFamily: sans,
+                              letterSpacing: 0.3,
+                              cursor: 'pointer',
+                              transition: 'background .15s, color .15s',
+                            }}
+                          >
+                            {isCopied ? '✓ Copied!' : 'Share picks'}
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

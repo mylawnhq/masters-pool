@@ -16,10 +16,19 @@ async function getData() {
     .eq('status', 'confirmed')
     .order('name');
 
+  // Pick counts: how many entries chose each golfer (across all six pick columns).
+  const pickCounts = {};
+  (entries || []).forEach(e => {
+    ['group1', 'group2a', 'group2b', 'group3a', 'group3b', 'group4'].forEach(k => {
+      const g = e[k];
+      if (g) pickCounts[g] = (pickCounts[g] || 0) + 1;
+    });
+  });
+
   // When the feature flag is off, the site behaves exactly as it did pre-tournament:
   // entries A–Z, no earnings, no rankings, no timestamp, no polling.
   if (!SCORES_LIVE) {
-    return { entries: entries || [], earnings: {}, lastUpdated: null };
+    return { entries: entries || [], earnings: {}, lastUpdated: null, pickCounts };
   }
 
   const { data: earningsData } = await supabase
@@ -39,20 +48,21 @@ async function getData() {
     .limit(1);
   const lastUpdated = latest?.[0]?.updated_at || null;
 
-  return { entries: entries || [], earnings, lastUpdated };
+  return { entries: entries || [], earnings, lastUpdated, pickCounts };
 }
 
 // Revalidate every 60 seconds so new data shows without redeploy
 export const revalidate = 60;
 
 export default async function Home() {
-  const { entries, earnings, lastUpdated } = await getData();
+  const { entries, earnings, lastUpdated, pickCounts } = await getData();
   return (
     <PasswordGate>
       <Leaderboard
         entries={entries}
         earnings={earnings}
         lastUpdated={lastUpdated}
+        pickCounts={pickCounts}
         scoresLive={SCORES_LIVE}
       />
     </PasswordGate>

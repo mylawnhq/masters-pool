@@ -59,7 +59,8 @@ async function main() {
     process.exit(1);
   }
 
-  const text = readFileSync(csvPath, 'utf-8');
+  // Google Forms CSV exports are latin1/windows-1252 encoded (e.g. Åberg, Højgaard)
+  const text = readFileSync(csvPath, 'latin1');
   const rows = parseCSV(text);
   
   if (rows.length < 2) {
