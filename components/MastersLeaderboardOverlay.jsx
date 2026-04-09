@@ -4,6 +4,13 @@ import { useEffect, useMemo, useState } from 'react';
 const bask = "'Libre Baskerville', Georgia, serif";
 const sans = "'Source Sans 3', 'Helvetica Neue', sans-serif";
 
+// localStorage key for pinned golfer favorites. Stored as a JSON array of
+// golfer names.
+const FAVORITES_KEY = 'masters-golfer-favorites';
+
+// Row grid: star (22px) | position (40px) | name (1fr) | score (54px) | thru (54px)
+const ROW_GRID = '22px 40px 1fr 54px 54px';
+
 // Augusta National front 9 + back 9 par values, holes 1–18.
 const AUGUSTA_PARS = [4, 5, 4, 3, 4, 3, 4, 5, 4, 4, 4, 3, 5, 4, 5, 3, 4, 4];
 const PAR_OUT = AUGUSTA_PARS.slice(0, 9).reduce((a, b) => a + b, 0); // 36
@@ -349,6 +356,45 @@ function ScorecardExpanded({ holes }) {
 
 export default function MastersLeaderboardOverlay({ open, onClose, golferStats }) {
   const [expanded, setExpanded] = useState(null);
+  const [favorites, setFavorites] = useState([]);
+  const [favoritesHydrated, setFavoritesHydrated] = useState(false);
+
+  // Hydrate favorites from localStorage once on mount (client-only).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(FAVORITES_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setFavorites(parsed.filter(n => typeof n === 'string'));
+        }
+      }
+    } catch {
+      // Corrupt value — ignore and start empty.
+    }
+    setFavoritesHydrated(true);
+  }, []);
+
+  // Persist favorites whenever they change (after initial hydration).
+  useEffect(() => {
+    if (!favoritesHydrated) return;
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+    } catch {
+      // Storage full / disabled — swallow.
+    }
+  }, [favorites, favoritesHydrated]);
+
+  const toggleFavorite = (name) => {
+    setFavorites(prev =>
+      prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
+    );
+  };
+
+  // Set for O(1) lookup inside the row renderer and filter.
+  const favoritesSet = useMemo(() => new Set(favorites), [favorites]);
 
   // Reset expansion when the overlay closes so reopening starts collapsed.
   useEffect(() => {
@@ -497,7 +543,7 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
               zIndex: 1,
               background: '#f7f4ef',
               display: 'grid',
-              gridTemplateColumns: '44px 1fr 54px 54px',
+              gridTemplateColumns: ROW_GRID,
               gap: 8,
               padding: '10px 16px',
               fontSize: 9,
@@ -508,6 +554,7 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
               borderBottom: '1px solid #e0dbd2',
             }}
           >
+            <div />
             <div>Pos</div>
             <div>Player</div>
             <div style={{ textAlign: 'right' }}>Score</div>
@@ -528,117 +575,215 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
             </div>
           )}
 
-          {list.map((g, i) => {
-            const posNum = parseInt(
-              String(g.position || '').replace(/[^\d]/g, ''),
-              10
-            );
-            const isOut = g.status === 'cut' || g.status === 'withdrawn';
-            const isTop3 =
-              !isOut &&
-              Number.isFinite(posNum) &&
-              posNum > 0 &&
-              posNum <= 3;
-            const posLabel = isOut
-              ? g.status === 'cut'
-                ? 'CUT'
-                : 'WD'
-              : g.position || '—';
-            const rowKey = `${g.name}-${i}`;
-            const isExpanded = expanded === rowKey;
-            return (
-              <div key={rowKey}>
-                <button
-                  type="button"
-                  onClick={() => setExpanded(isExpanded ? null : rowKey)}
-                  aria-expanded={isExpanded}
-                  style={{
-                    width: '100%',
-                    display: 'grid',
-                    gridTemplateColumns: '44px 1fr 54px 54px',
-                    gap: 8,
-                    padding: '10px 16px',
-                    alignItems: 'center',
-                    borderLeft: `3px solid ${isTop3 ? '#d4af37' : 'transparent'}`,
-                    borderBottom: '1px solid #f0ede5',
-                    background: isExpanded
-                      ? '#f7f4ef'
-                      : i % 2 === 0 ? '#fff' : '#faf8f4',
-                    opacity: isOut ? 0.55 : 1,
-                    border: 'none',
-                    borderTop: 'none',
-                    borderRight: 'none',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    font: 'inherit',
-                    color: 'inherit',
-                  }}
-                >
+          {/* Row renderer shared by My Golfers and the full-field list. */}
+          {(() => {
+            const favGolfers = list.filter(g => favoritesSet.has(g.name));
+
+            const renderRow = (g, i, section) => {
+              const posNum = parseInt(
+                String(g.position || '').replace(/[^\d]/g, ''),
+                10,
+              );
+              const isOut = g.status === 'cut' || g.status === 'withdrawn';
+              const isTop3 =
+                !isOut &&
+                Number.isFinite(posNum) &&
+                posNum > 0 &&
+                posNum <= 3;
+              const posLabel = isOut
+                ? g.status === 'cut'
+                  ? 'CUT'
+                  : 'WD'
+                : g.position || '—';
+              // Expansion state is keyed by name only so tapping a favorite in
+              // the My Golfers section also reveals the scorecard if the same
+              // player is viewed in the main list (and vice versa).
+              const isExpanded = expanded === g.name;
+              const isFav = favoritesSet.has(g.name);
+
+              return (
+                <div key={`${section}-${g.name}`}>
                   <div
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isExpanded}
+                    onClick={() => setExpanded(isExpanded ? null : g.name)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setExpanded(isExpanded ? null : g.name);
+                      }
+                    }}
                     style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: isTop3 ? '#d4af37' : '#8b7d6b',
-                      fontFamily: bask,
-                      whiteSpace: 'nowrap',
+                      display: 'grid',
+                      gridTemplateColumns: ROW_GRID,
+                      gap: 8,
+                      padding: '10px 14px',
+                      alignItems: 'center',
+                      borderLeft: `3px solid ${isTop3 ? '#d4af37' : 'transparent'}`,
+                      borderBottom: '1px solid #f0ede5',
+                      background: isExpanded
+                        ? '#f7f4ef'
+                        : i % 2 === 0 ? '#fff' : '#faf8f4',
+                      opacity: isOut ? 0.55 : 1,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      outline: 'none',
                     }}
                   >
-                    {posLabel}
-                  </div>
-                  <div style={{ minWidth: 0 }}>
+                    {/* Star — toggles favorite, stopPropagation so it doesn't expand the row */}
                     <div
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={isFav}
+                      aria-label={isFav ? `Remove ${g.name} from My Golfers` : `Add ${g.name} to My Golfers`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(g.name);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleFavorite(g.name);
+                        }
+                      }}
                       style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: '#1a2e1a',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
+                        fontSize: 16,
+                        lineHeight: 1,
+                        color: isFav ? '#d4af37' : '#d9d3c7',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: 24,
+                        width: 22,
+                        userSelect: 'none',
                       }}
                     >
-                      {g.name}
+                      {isFav ? '★' : '☆'}
                     </div>
-                    {!isOut && (
+
+                    {/* Position */}
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: isTop3 ? '#d4af37' : '#8b7d6b',
+                        fontFamily: bask,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {posLabel}
+                    </div>
+
+                    {/* Name + tap hint */}
+                    <div style={{ minWidth: 0 }}>
                       <div
                         style={{
-                          fontSize: 9,
-                          color: '#b5a999',
-                          marginTop: 2,
-                          letterSpacing: 0.3,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: '#1a2e1a',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                         }}
                       >
-                        {isExpanded ? 'Tap to close' : 'Tap for scorecard'}
+                        {g.name}
                       </div>
-                    )}
+                      {!isOut && (
+                        <div
+                          style={{
+                            fontSize: 9,
+                            color: '#b5a999',
+                            marginTop: 2,
+                            letterSpacing: 0.3,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {isExpanded ? 'Tap to close' : 'Tap for scorecard'}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Score */}
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: scoreColor(g.score_to_par, g.status),
+                        fontFamily: bask,
+                        textAlign: 'right',
+                      }}
+                    >
+                      {g.score_to_par == null ? '—' : fmtScore(g.score_to_par)}
+                    </div>
+
+                    {/* Thru */}
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: '#8b7d6b',
+                        textAlign: 'right',
+                      }}
+                    >
+                      {g.thru || '—'}
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: scoreColor(g.score_to_par, g.status),
-                      fontFamily: bask,
-                      textAlign: 'right',
-                    }}
-                  >
-                    {g.score_to_par == null ? '—' : fmtScore(g.score_to_par)}
+                  {isExpanded && <ScorecardExpanded holes={g.round1_scores} />}
+                </div>
+              );
+            };
+
+            return (
+              <>
+                {/* My Golfers pinned section */}
+                {favGolfers.length > 0 && (
+                  <div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '12px 14px 6px',
+                        fontSize: 10,
+                        letterSpacing: 1.8,
+                        textTransform: 'uppercase',
+                        color: '#d4af37',
+                        fontWeight: 700,
+                      }}
+                    >
+                      <span>★</span>
+                      <span>My Golfers ({favGolfers.length})</span>
+                      <div
+                        style={{
+                          flex: 1,
+                          height: 1,
+                          background: 'linear-gradient(90deg, #e8dcc0, transparent)',
+                        }}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        border: '1px solid #e8dcc0',
+                        borderRadius: 6,
+                        margin: '0 10px 10px',
+                        overflow: 'hidden',
+                        background: '#fdfcf6',
+                      }}
+                    >
+                      {favGolfers.map((g, i) => renderRow(g, i, 'fav'))}
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: '#8b7d6b',
-                      textAlign: 'right',
-                    }}
-                  >
-                    {g.thru || '—'}
-                  </div>
-                </button>
-                {isExpanded && <ScorecardExpanded holes={g.round1_scores} />}
-              </div>
+                )}
+
+                {/* Full field */}
+                {list.map((g, i) => renderRow(g, i, 'main'))}
+              </>
             );
-          })}
+          })()}
         </div>
       </div>
     </div>
