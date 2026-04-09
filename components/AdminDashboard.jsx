@@ -115,19 +115,37 @@ export default function AdminDashboard() {
 
 function AnalyticsView() {
   const [rows, setRows] = useState(null);
+  const [totalShareCount, setTotalShareCount] = useState(null);
   const [err, setErr] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const { data, error } = await supabase
-        .from('page_views')
-        .select('visitor_id, timestamp, device, search_query, event_type')
-        .order('timestamp', { ascending: false })
-        .limit(50000);
+      // Pull the most recent 50k rows for the detail breakdowns (devices,
+      // hourly traffic, top searches, etc). This window can drop older
+      // share rows as pageviews accumulate, so the total share count is
+      // fetched separately below with a server-side exact count that
+      // ignores the row-fetch limit entirely.
+      const [rowsResult, sharesResult] = await Promise.all([
+        supabase
+          .from('page_views')
+          .select('visitor_id, timestamp, device, search_query, event_type')
+          .order('timestamp', { ascending: false })
+          .limit(50000),
+        supabase
+          .from('page_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_type', 'share'),
+      ]);
       if (cancelled) return;
-      if (error) setErr(error.message);
-      else setRows(data || []);
+      if (rowsResult.error) {
+        setErr(rowsResult.error.message);
+      } else {
+        setRows(rowsResult.data || []);
+      }
+      if (!sharesResult.error && typeof sharesResult.count === 'number') {
+        setTotalShareCount(sharesResult.count);
+      }
     }
     load();
     return () => { cancelled = true; };
@@ -136,7 +154,9 @@ function AnalyticsView() {
   const stats = useMemo(() => {
     if (!rows) return null;
     const pageviews = rows.filter(r => r.event_type === 'pageview');
-    const shares = rows.filter(r => r.event_type === 'share');
+    // Shares inside the 50k row window are only used as a fallback if the
+    // server-side exact count hasn't loaded yet.
+    const sharesInWindow = rows.filter(r => r.event_type === 'share');
     const searches = rows.filter(r => r.event_type === 'search' && r.search_query);
 
     const totalVisits = pageviews.length;
@@ -188,9 +208,12 @@ function AnalyticsView() {
       hourly,
       devices,
       topQueries,
-      totalShares: shares.length,
+      // Prefer the server-side exact count (not bounded by the 50k row
+      // fetch). Fall back to the in-window count if that query hasn't
+      // resolved yet.
+      totalShares: totalShareCount != null ? totalShareCount : sharesInWindow.length,
     };
-  }, [rows]);
+  }, [rows, totalShareCount]);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: sans, color: '#1a2e1a' }}>
