@@ -30,6 +30,206 @@ function getResults(year) {
 }
 
 const fmt$ = (n) => '$' + n.toLocaleString();
+
+function generateCSV(selectedYears) {
+  const multi = selectedYears.length > 1;
+  const header = multi
+    ? 'Year,Finish,Patron,Tournament Earnings'
+    : 'Finish,Patron,Tournament Earnings';
+  const lines = [header];
+  const sorted = [...selectedYears].sort();
+  sorted.forEach(y => {
+    const results = getResults(y);
+    results.forEach(r => {
+      const name = `"${(r.name || '').replace(/"/g, '""')}"`;
+      const earnings = r.earnings || 0;
+      if (multi) {
+        lines.push(`${y},${r.finish},${name},${earnings}`);
+      } else {
+        lines.push(`${r.finish},${name},${earnings}`);
+      }
+    });
+  });
+  return lines.join('\n');
+}
+
+function downloadCSV(selectedYears) {
+  const csv = generateCSV(selectedYears);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+
+  let filename;
+  if (selectedYears.length === YEARS.length) {
+    filename = 'masters-pool-all-years.csv';
+  } else if (selectedYears.length === 1) {
+    filename = `masters-pool-${selectedYears[0]}.csv`;
+  } else {
+    const sorted = [...selectedYears].sort();
+    filename = `masters-pool-${sorted[0]}-${sorted[sorted.length - 1]}.csv`;
+  }
+
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function DownloadModal({ open, onClose }) {
+  const [selected, setSelected] = useState(new Set(YEARS));
+
+  if (!open) return null;
+
+  const allSelected = selected.size === YEARS.length;
+
+  const toggleYear = (y) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(y)) next.delete(y); else next.add(y);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    setSelected(allSelected ? new Set() : new Set(YEARS));
+  };
+
+  const count = selected.size;
+  const buttonLabel = count === 0
+    ? 'Select years to download'
+    : count === YEARS.length
+      ? 'Download all years → CSV'
+      : count === 1
+        ? `Download ${[...selected][0]} → CSV`
+        : `Download ${count} years → CSV`;
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 400,
+        background: 'rgba(26,46,26,0.45)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: 360, maxWidth: '100%',
+          background: '#fff', borderRadius: 12,
+          border: '1px solid #e0dbd2',
+          boxShadow: '0 20px 50px rgba(0,0,0,.2)',
+          overflow: 'hidden', fontFamily: sans,
+        }}
+      >
+        {/* Modal header */}
+        <div style={{ padding: '18px 20px 14px', position: 'relative' }}>
+          <div style={{
+            fontFamily: bask, fontStyle: 'italic', fontSize: 18,
+            color: '#1a2e1a', marginBottom: 2,
+          }}>Download Results</div>
+          <div style={{ fontSize: 12, color: '#8b7d6b' }}>
+            Select years to export as CSV
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              position: 'absolute', top: 14, right: 14,
+              background: 'none', border: 'none', fontSize: 16,
+              color: '#8b7d6b', cursor: 'pointer', padding: 4,
+            }}
+          >✕</button>
+        </div>
+
+        {/* Toggle all */}
+        <div style={{ padding: '0 20px 12px' }}>
+          <button
+            type="button"
+            onClick={toggleAll}
+            style={{
+              width: '100%', padding: '8px 12px',
+              borderRadius: 6, border: `1px solid ${allSelected ? '#006B54' : '#e0dbd2'}`,
+              background: allSelected ? '#f0faf5' : '#fff',
+              color: allSelected ? '#006B54' : '#8b7d6b',
+              fontSize: 12, fontWeight: 600, fontFamily: sans,
+              cursor: 'pointer', textAlign: 'left',
+            }}
+          >
+            {allSelected ? '✓ All years selected' : 'Select all years'}
+          </button>
+        </div>
+
+        {/* Year checkboxes */}
+        <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {YEARS.map(y => {
+            const m = YEAR_META[y];
+            const checked = selected.has(y);
+            return (
+              <div
+                key={y}
+                onClick={() => toggleYear(y)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 10px', borderRadius: 6, cursor: 'pointer',
+                  border: `1px solid ${checked ? '#006B54' : '#e0dbd2'}`,
+                  background: checked ? '#f0faf5' : '#fff',
+                }}
+              >
+                {/* Checkbox */}
+                <div style={{
+                  width: 16, height: 16, borderRadius: 3,
+                  border: `1.5px solid ${checked ? '#006B54' : '#d9d3c7'}`,
+                  background: checked ? '#006B54' : '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  {checked && (
+                    <span style={{ color: '#fff', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>✓</span>
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#1a2e1a' }}>{y}</div>
+                  <div style={{ fontSize: 10, color: '#8b7d6b', marginTop: 1 }}>
+                    {m.entries} entries · {fmt$(m.purse)} purse · 🏆 {m.winner}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Download button */}
+        <div style={{ padding: '0 20px 18px' }}>
+          <button
+            type="button"
+            disabled={count === 0}
+            onClick={() => {
+              downloadCSV([...selected]);
+              onClose();
+            }}
+            style={{
+              width: '100%', padding: '12px 16px',
+              borderRadius: 8, border: 'none',
+              background: count === 0 ? '#e0dbd2' : '#006B54',
+              color: count === 0 ? '#8b7d6b' : '#fff',
+              fontSize: 13, fontWeight: 700, fontFamily: sans,
+              cursor: count === 0 ? 'not-allowed' : 'pointer',
+              letterSpacing: 0.3,
+            }}
+          >
+            {buttonLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const fmt$ = (n) => '$' + n.toLocaleString();
 const fmtE = (n) => '$' + (n / 1000000).toFixed(2) + 'M';
 
 function FinishBadge({ n }) {
@@ -351,18 +551,40 @@ function YearCard({ year }) {
 
 export default function HistoricalView() {
   const [activeYear, setActiveYear] = useState('2025');
+  const [downloadOpen, setDownloadOpen] = useState(false);
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '24px 16px' }}>
-      <div style={{ marginBottom: 20 }}>
-        <div style={{
-          fontFamily: bask, fontStyle: 'italic', fontSize: 22,
-          color: '#1a2e1a', marginBottom: 4,
-        }}>Pool History</div>
-        <div style={{ fontSize: 13, color: '#8b7d6b' }}>
-          Year-by-year results, payouts, and tournament earnings. No 2022 — Alex was in Brazil.
+      <div style={{
+        marginBottom: 20, display: 'flex',
+        alignItems: 'flex-start', justifyContent: 'space-between', gap: 12,
+      }}>
+        <div>
+          <div style={{
+            fontFamily: bask, fontStyle: 'italic', fontSize: 22,
+            color: '#1a2e1a', marginBottom: 4,
+          }}>Pool History</div>
+          <div style={{ fontSize: 13, color: '#8b7d6b' }}>
+            Year-by-year results, payouts, and tournament earnings. No 2022 — Alex was in Brazil.
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={() => setDownloadOpen(true)}
+          style={{
+            flexShrink: 0, padding: '7px 14px',
+            borderRadius: 6, border: '1px solid #e0dbd2',
+            background: '#fff', color: '#006B54',
+            fontSize: 11, fontWeight: 600, fontFamily: sans,
+            cursor: 'pointer', whiteSpace: 'nowrap',
+            letterSpacing: 0.3,
+          }}
+        >
+          ↓ Download CSV
+        </button>
       </div>
+
+      <DownloadModal open={downloadOpen} onClose={() => setDownloadOpen(false)} />
 
       {/* Year selector tiles */}
       <div style={{
