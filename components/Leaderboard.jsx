@@ -920,7 +920,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                             border: `1px solid ${gBubble ? '#e8dcc0' : '#e0dbd2'}`,
                             padding: '14px 14px 12px',
                             boxShadow: '0 1px 4px rgba(0,0,0,.04)',
-                            position: 'relative', overflow: 'hidden', minWidth: 0,
+                            position: 'relative', overflow: cardBadge ? 'visible' : 'hidden', minWidth: 0,
                             opacity: isCut || gBelowCut ? 0.4 : 1,
                           }}>
                             <div style={{
