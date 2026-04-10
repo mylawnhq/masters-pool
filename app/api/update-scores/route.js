@@ -186,15 +186,24 @@ async function fetchFromESPN() {
       if (stp) scoreToPar = parseScore(stp.displayValue ?? stp.value);
     }
 
-    // today's score
+    // today's score — ESPN puts this in status.todayDetail as a string like
+    // "+1(6)", "-4(F)", "E(1)". Parse the score portion before the parentheses.
+    // Fall back to the statistics array in case ESPN changes the format.
     let todayScore = null;
-    const todayStat = (c.statistics || []).find(
-      s =>
-        s?.name === 'today' ||
-        s?.displayName === 'Today' ||
-        s?.shortDisplayName === 'TODAY'
-    );
-    if (todayStat) todayScore = parseScore(todayStat.displayValue ?? todayStat.value);
+    const todayDetail = c.status?.todayDetail;
+    if (todayDetail) {
+      const beforeParen = todayDetail.split('(')[0].trim();
+      todayScore = parseScore(beforeParen);
+    }
+    if (todayScore == null) {
+      const todayStat = (c.statistics || []).find(
+        s =>
+          s?.name === 'today' ||
+          s?.displayName === 'Today' ||
+          s?.shortDisplayName === 'TODAY'
+      );
+      if (todayStat) todayScore = parseScore(todayStat.displayValue ?? todayStat.value);
+    }
 
     // thru: integer holes played; 0 with teeTime means not started yet.
     const thruVal = c.status?.thru;
