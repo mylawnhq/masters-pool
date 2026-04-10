@@ -676,9 +676,9 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats, 
               const isExpanded = expanded === g.name;
               const isFav = favoritesSet.has(g.name);
 
-              // Left border color: amber for bubble, gold for top 3, else transparent
+              // Left border color: gold for bubble or top 3, else transparent
               const leftBorder = isBubble
-                ? '#e6a817'
+                ? '#d4af37'
                 : isTop3
                   ? '#d4af37'
                   : 'transparent';
@@ -706,7 +706,9 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats, 
                       borderBottom: '1px solid #f0ede5',
                       background: isExpanded
                         ? '#f7f4ef'
-                        : i % 2 === 0 ? '#fff' : '#faf8f4',
+                        : isBubble
+                          ? '#fdfcf6'
+                          : i % 2 === 0 ? '#fff' : '#faf8f4',
                       opacity: isOut || isBelowCut ? 0.4 : 1,
                       cursor: 'pointer',
                       textAlign: 'left',
@@ -788,7 +790,7 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats, 
                               fontWeight: 700,
                               letterSpacing: 0.8,
                               textTransform: 'uppercase',
-                              background: '#e6a817',
+                              background: '#d4af37',
                               color: '#fff',
                               padding: '2px 5px',
                               borderRadius: 3,

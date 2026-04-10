@@ -424,7 +424,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
           </div>
 
           {/* Row 3: small tiles (1st/2nd/3rd + optional projected cut) */}
-          <div style={{ display: 'grid', gridTemplateColumns: showCutFeatures ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 6, marginTop: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: cutLine != null ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 6, marginTop: 8 }}>
             {[
               { amt: Math.round(poolPurse * 0.6), label: '1st', color: '#d4af37' },
               { amt: Math.round(poolPurse * 0.3), label: '2nd', color: 'rgba(255,255,255,.6)' },
@@ -448,7 +448,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                 </div>
               </div>
             ))}
-            {showCutFeatures && (
+            {cutLine != null && (
               <div style={{
                 background: '#c0392b', borderRadius: 6,
                 padding: '6px 6px', textAlign: 'center', minWidth: 0,
@@ -832,7 +832,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                                     <div style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
                                       <span>{p.golfer}</span>
                                       {gBubble && (
-                                        <span style={{ fontSize: 7, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', background: '#e6a817', color: '#fff', padding: '1px 4px', borderRadius: 2, flexShrink: 0 }}>
+                                        <span style={{ fontSize: 7, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', background: '#d4af37', color: '#fff', padding: '1px 4px', borderRadius: 2, flexShrink: 0 }}>
                                           Bubble
                                         </span>
                                       )}
@@ -901,7 +901,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                         const lastName = spaceIdx === -1 ? '' : p.golfer.slice(spaceIdx + 1);
                         const count = pickCounts[p.golfer] || 0;
                         const barColor = gBubble
-                          ? '#e6a817'
+                          ? '#d4af37'
                           : gBelowCut
                             ? '#c0392b'
                             : liveMode
@@ -912,11 +912,13 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                                 : pe >= 1e5 ? '#8bb89e'
                                 : '#d9d3c7';
                         const cardBadge = isCut ? 'MC' : gBubble ? 'BUBBLE' : gBelowCut ? 'BELOW CUT' : null;
-                        const badgeBg = isCut ? '#c0392b' : gBubble ? '#e6a817' : '#c0392b';
+                        const badgeBg = isCut ? '#c0392b' : gBubble ? '#d4af37' : '#c0392b';
                         return (
                           <div key={i} className="pick-card" style={{
-                            background: '#fff', borderRadius: 8,
-                            border: '1px solid #e0dbd2', padding: '14px 14px 12px',
+                            background: gBubble ? '#fdfcf6' : '#fff',
+                            borderRadius: 8,
+                            border: `1px solid ${gBubble ? '#e8dcc0' : '#e0dbd2'}`,
+                            padding: '14px 14px 12px',
                             boxShadow: '0 1px 4px rgba(0,0,0,.04)',
                             position: 'relative', overflow: 'hidden', minWidth: 0,
                             opacity: isCut || gBelowCut ? 0.4 : 1,
@@ -936,7 +938,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                                 {cardBadge}
                               </div>
                             )}
-                            <div className="pick-group" style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: '#006B54', fontWeight: 700, marginBottom: 6 }}>
+                            <div className="pick-group" style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: gBubble ? '#d4af37' : '#006B54', fontWeight: 700, marginBottom: 6 }}>
                               {p.group}
                             </div>
                             <div className="pick-name" style={{ color: '#1a2e1a', marginBottom: 4, lineHeight: 1.2 }}>
