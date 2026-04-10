@@ -30,6 +30,7 @@ function getResults(year) {
 }
 
 const fmt$ = (n) => '$' + n.toLocaleString();
+const fmtE = (n) => '$' + (n / 1000000).toFixed(2) + 'M';
 
 function generateCSV(selectedYears) {
   const multi = selectedYears.length > 1;
@@ -228,9 +229,6 @@ function DownloadModal({ open, onClose }) {
     </div>
   );
 }
-
-const fmt$ = (n) => '$' + n.toLocaleString();
-const fmtE = (n) => '$' + (n / 1000000).toFixed(2) + 'M';
 
 function FinishBadge({ n }) {
   const colors = { 1: '#d4af37', 2: '#8b7d6b', 3: '#9a7c2f' };
