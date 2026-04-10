@@ -7,13 +7,27 @@ const sans = "'Source Sans 3', 'Helvetica Neue', sans-serif";
 
 const YEARS = ['2025', '2024', '2023', '2021', '2020'];
 
-const YEAR_META = {
-  '2025': { entries: 271, purse: 6775,  first: 4065,  second: 2032, third:  677, winner: 'Russel Helbling' },
-  '2024': { entries: 217, purse: 5425,  first: 3255,  second: 1627, third:  542, winner: 'Ben Robinson' },
-  '2023': { entries: 135, purse: 3375,  first: 2025,  second: 1012, third:  337, winner: 'John Millet' },
-  '2021': { entries: 136, purse: 3400,  first: 2040,  second: 1020, third:  340, winner: 'Will Headley' },
-  '2020': { entries: 83,  purse: 2075,  first: 1245,  second:  622, third:  207, winner: 'Nate Mosby' },
-};
+// Derive metadata from the data file itself — pool stats + winner from 1st-place finisher
+const YEAR_META = {};
+YEARS.forEach(y => {
+  const entry = HISTORICAL_DATA.years?.[y];
+  const pool = entry?.pool || {};
+  const results = entry?.results || [];
+  const winner = results.find(r => r.finish === 1);
+  YEAR_META[y] = {
+    entries: pool.entries || results.length,
+    purse:   pool.purse || 0,
+    first:   pool.first || 0,
+    second:  pool.second || 0,
+    third:   pool.third || 0,
+    winner:  winner?.name || '—',
+  };
+});
+
+// Helper to get results array for a given year
+function getResults(year) {
+  return HISTORICAL_DATA.years?.[year]?.results || [];
+}
 
 const fmt$ = (n) => '$' + n.toLocaleString();
 const fmtE = (n) => '$' + (n / 1000000).toFixed(2) + 'M';
@@ -38,7 +52,7 @@ function FinishBadge({ n }) {
 
 function YearCard({ year }) {
   const meta = YEAR_META[year];
-  const [rows, setRows] = useState(HISTORICAL_DATA[year] || []);
+  const [rows, setRows] = useState(getResults(year));
   const [search, setSearch] = useState('');
   const [editingIdx, setEditingIdx] = useState(null);
   const [editDraft, setEditDraft] = useState({});
@@ -48,7 +62,7 @@ function YearCard({ year }) {
   const [prevYear, setPrevYear] = useState(year);
   if (year !== prevYear) {
     setPrevYear(year);
-    setRows(HISTORICAL_DATA[year] || []);
+    setRows(getResults(year));
     setSearch('');
     setEditingIdx(null);
     setEditDraft({});
