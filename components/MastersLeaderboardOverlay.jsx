@@ -144,8 +144,8 @@ function sumStrokes(holes, from, to) {
 
 // Inline scorecard expansion: front 9 stacked over back 9, both as
 // table-layout: fixed so cells are equal width and seamless.
-function ScorecardExpanded({ holes }) {
-  // Normalize incoming round1_scores into a flat 18-length stroke array.
+function ScorecardExpanded({ holes, currentRound }) {
+  // Normalize incoming current_round_scores into a flat 18-length stroke array.
   // Accepts either { strokes, scoreType } objects or raw stroke numbers, so
   // older snapshots without the wrapper still render.
   const strokes = useMemo(() => {
@@ -295,7 +295,7 @@ function ScorecardExpanded({ holes }) {
             padding: '4px 0',
           }}
         >
-          No round 1 holes recorded yet
+          No Round {currentRound || 1} holes recorded yet
         </div>
       ) : (
         <>
@@ -323,7 +323,7 @@ function ScorecardExpanded({ holes }) {
                 fontWeight: 700,
               }}
             >
-              Round 1 Total
+              Round {currentRound || 1} Total
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
               <span
@@ -428,7 +428,8 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
         score_to_par: s?.score_to_par ?? null,
         thru: s?.thru ?? null,
         status: s?.status ?? 'active',
-        round1_scores: s?.round1_scores ?? null,
+        current_round_scores: s?.current_round_scores ?? null,
+        current_round: s?.current_round ?? 1,
       }))
       .sort((a, b) => {
         const aOut = a.status === 'cut' || a.status === 'withdrawn';
@@ -766,7 +767,7 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
                       {g.thru || '—'}
                     </div>
                   </div>
-                  {isExpanded && <ScorecardExpanded holes={g.round1_scores} />}
+                  {isExpanded && <ScorecardExpanded holes={g.current_round_scores} currentRound={g.current_round} />}
                 </div>
               );
             };

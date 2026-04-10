@@ -156,8 +156,8 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
         const fetchGolfers = async () => {
           const res = await supabase
             .from('golfer_leaderboard')
-            .select('golfer_name, position, score_to_par, thru, status, round1_scores, updated_at');
-          if (res.error && /round1_scores/i.test(res.error.message || '')) {
+            .select('golfer_name, position, score_to_par, thru, status, current_round_scores, current_round, updated_at');
+          if (res.error && /current_round/i.test(res.error.message || '')) {
             return supabase
               .from('golfer_leaderboard')
               .select('golfer_name, position, score_to_par, thru, status, updated_at');
@@ -178,7 +178,8 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
               score_to_par: r.score_to_par,
               thru: r.thru,
               status: r.status,
-              round1_scores: r.round1_scores ?? null,
+              current_round_scores: r.current_round_scores ?? null,
+              current_round: r.current_round ?? 1,
             };
             if (r.updated_at && (!newest || r.updated_at > newest)) newest = r.updated_at;
           });
