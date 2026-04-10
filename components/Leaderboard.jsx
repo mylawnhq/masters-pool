@@ -155,6 +155,25 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
     };
   }, [golferStats, liveMode]);
 
+  // Hot-round indicator: the golfer(s) with the lowest today_score that is
+  // at most -2. Stored as a Set of golfer names for O(1) lookup.
+  const hotRoundNames = useMemo(() => {
+    if (!liveMode) return new Set();
+    const vals = Object.entries(golferStats);
+    let minToday = null;
+    for (const [, s] of vals) {
+      if (s.status === 'cut' || s.status === 'withdrawn') continue;
+      if (s.today_score == null) continue;
+      if (minToday === null || s.today_score < minToday) minToday = s.today_score;
+    }
+    if (minToday === null || minToday > -2) return new Set();
+    const names = new Set();
+    for (const [name, s] of vals) {
+      if (s.today_score === minToday) names.add(name);
+    }
+    return names;
+  }, [golferStats, liveMode]);
+
   const totalEntries = entries.length;
   const poolPurse = totalEntries * 25;
 
@@ -171,7 +190,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
         const fetchGolfers = async () => {
           const res = await supabase
             .from('golfer_leaderboard')
-            .select('golfer_name, position, score_to_par, thru, status, current_round_scores, current_round, cut_line, updated_at');
+            .select('golfer_name, position, score_to_par, today_score, thru, status, current_round_scores, current_round, cut_line, updated_at');
           if (res.error && /current_round|cut_line/i.test(res.error.message || '')) {
             return supabase
               .from('golfer_leaderboard')
@@ -191,6 +210,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
             nextStats[r.golfer_name] = {
               position: r.position,
               score_to_par: r.score_to_par,
+              today_score: r.today_score ?? null,
               thru: r.thru,
               status: r.status,
               current_round_scores: r.current_round_scores ?? null,
@@ -864,6 +884,9 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                                     </div>
                                     <div style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
                                       <span>{p.golfer}</span>
+                                      {hotRoundNames.has(p.golfer) && (
+                                        <span style={{ flexShrink: 0, fontSize: 11, lineHeight: 1 }} title="Hot round">🔥</span>
+                                      )}
                                       {gBubble && (
                                         <span style={{ fontSize: 7, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', background: '#d4af37', color: '#fff', padding: '1px 4px', borderRadius: 2, flexShrink: 0 }}>
                                           Bubble
@@ -1145,6 +1168,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
         golferStats={golferStats}
         cutLine={cutLine}
         currentRound={currentRound}
+        hotRoundNames={hotRoundNames}
       />
     </div>
   );

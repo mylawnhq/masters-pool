@@ -49,7 +49,7 @@ async function getData() {
   try {
     const res = await supabase
       .from('golfer_leaderboard')
-      .select('golfer_name, position, score_to_par, thru, status, current_round_scores, current_round, cut_line, updated_at');
+      .select('golfer_name, position, score_to_par, today_score, thru, status, current_round_scores, current_round, cut_line, updated_at');
     if (res.error && /current_round|cut_line/i.test(res.error.message || '')) {
       const retry = await supabase
         .from('golfer_leaderboard')
@@ -68,6 +68,7 @@ async function getData() {
     golferStats[row.golfer_name] = {
       position: row.position,
       score_to_par: row.score_to_par,
+      today_score: row.today_score ?? null,
       thru: row.thru,
       status: row.status,
       current_round_scores: row.current_round_scores ?? null,

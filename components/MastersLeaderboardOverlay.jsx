@@ -361,7 +361,7 @@ function fmtCut(n) {
   return n > 0 ? `+${n}` : `${n}`;
 }
 
-export default function MastersLeaderboardOverlay({ open, onClose, golferStats, cutLine, currentRound }) {
+export default function MastersLeaderboardOverlay({ open, onClose, golferStats, cutLine, currentRound, hotRoundNames }) {
   const showCut = (currentRound ?? 0) >= 2 && cutLine != null;
   const [expanded, setExpanded] = useState(null);
   const [favorites, setFavorites] = useState([]);
@@ -783,6 +783,9 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats, 
                         >
                           {g.name}
                         </span>
+                        {hotRoundNames?.has(g.name) && (
+                          <span style={{ flexShrink: 0, fontSize: 13, lineHeight: 1 }} title="Hot round">🔥</span>
+                        )}
                         {isBubble && (
                           <span
                             style={{
