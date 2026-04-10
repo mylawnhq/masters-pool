@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
+import Day1Recap from './Day1Recap';
 
 const bask = "'Libre Baskerville', Georgia, serif";
 const sans = "'Source Sans 3', 'Helvetica Neue', sans-serif";
@@ -110,7 +111,81 @@ export default function AdminDashboard() {
     );
   }
 
-  return <AnalyticsView />;
+  return <AdminShell />;
+}
+
+function AdminShell() {
+  const [tab, setTab] = useState('analytics');
+
+  const tabs = [
+    { id: 'analytics', label: 'Analytics' },
+    { id: 'recap',     label: 'Day 1 Recap' },
+  ];
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: sans, color: '#1a2e1a' }}>
+      {/* Header bar */}
+      <div style={{ background: '#006B54', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>
+          Mendoza&apos;s Masters Pool • Admin
+        </div>
+        <a href="/" style={{
+          fontSize: 10, letterSpacing: 2, textTransform: 'uppercase',
+          color: '#d4af37', fontWeight: 600, textDecoration: 'none',
+        }}>
+          ← Back to Leaderboard
+        </a>
+      </div>
+
+      {/* Tab strip */}
+      <div style={{
+        background: '#fff',
+        borderBottom: '1px solid #e0dbd2',
+        display: 'flex',
+        justifyContent: 'center',
+        gap: 0,
+      }}>
+        <div style={{
+          display: 'flex',
+          gap: 4,
+          maxWidth: 1000,
+          width: '100%',
+          padding: '0 16px',
+        }}>
+          {tabs.map(t => {
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '14px 22px',
+                  cursor: 'pointer',
+                  fontFamily: sans,
+                  fontSize: 11,
+                  letterSpacing: 2,
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                  color: active ? '#006B54' : '#8b7d6b',
+                  borderBottom: active ? '2px solid #006B54' : '2px solid transparent',
+                  marginBottom: -1,
+                  transition: 'color 150ms ease',
+                }}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Tab body */}
+      {tab === 'analytics' ? <AnalyticsView /> : <Day1Recap />}
+    </div>
+  );
 }
 
 function AnalyticsView() {
@@ -216,20 +291,7 @@ function AnalyticsView() {
   }, [rows, totalShareCount]);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: sans, color: '#1a2e1a' }}>
-      {/* Header bar */}
-      <div style={{ background: '#006B54', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>
-          Mendoza&apos;s Masters Pool • Admin
-        </div>
-        <a href="/" style={{
-          fontSize: 10, letterSpacing: 2, textTransform: 'uppercase',
-          color: '#d4af37', fontWeight: 600, textDecoration: 'none',
-        }}>
-          ← Back to Leaderboard
-        </a>
-      </div>
-
+    <div>
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 16px 48px' }}>
         {/* Title */}
         <header style={{ textAlign: 'center', marginBottom: 28 }}>
