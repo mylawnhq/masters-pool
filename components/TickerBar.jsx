@@ -45,7 +45,7 @@ function scoreColor(n) {
   return '#8b7d6b';
 }
 
-function TickerItem({ golfer }) {
+function TickerItem({ golfer, dimmed }) {
   const { name, position, score_to_par, thru } = golfer;
   const hasStarted =
     position != null &&
@@ -57,7 +57,7 @@ function TickerItem({ golfer }) {
   const isTop3 = hasStarted && Number.isFinite(posNum) && posNum > 0 && posNum <= 3;
 
   return (
-    <div className="ticker-item">
+    <div className="ticker-item" style={dimmed ? { opacity: 0.4 } : undefined}>
       <span
         style={{
           fontSize: 11,
@@ -96,9 +96,29 @@ function TickerBadge({ label }) {
   );
 }
 
-export default function TickerBar({ golferStats, show }) {
+function CutBadge({ cutLine }) {
+  return (
+    <div
+      className="ticker-item"
+      style={{
+        background: '#c0392b',
+        color: '#fff',
+        fontWeight: 700,
+        fontSize: 11,
+        letterSpacing: 1,
+        padding: '8px 12px',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      CUT {fmtScore(cutLine)}
+    </div>
+  );
+}
+
+export default function TickerBar({ golferStats, show, cutLine, currentRound }) {
   const round = useMemo(() => detectRound(), []);
   const badgeLabel = round ? `R${round} Live` : 'Live';
+  const showCut = (currentRound ?? 0) >= 2 && cutLine != null;
 
   const list = useMemo(() => {
     const all = Object.entries(golferStats || {}).map(([name, s]) => ({
@@ -109,8 +129,13 @@ export default function TickerBar({ golferStats, show }) {
       status: s?.status ?? 'active',
     }));
     return all
-      .filter(g => g.status !== 'cut' && g.status !== 'withdrawn')
+      // Keep withdrawn out, but keep cut golfers during R2+ so they show dimmed
+      .filter(g => g.status !== 'withdrawn')
       .sort((a, b) => {
+        // Push officially cut golfers to the end
+        const aCut = a.status === 'cut';
+        const bCut = b.status === 'cut';
+        if (aCut !== bCut) return aCut ? 1 : -1;
         const pa = posSortKey(a.position);
         const pb = posSortKey(b.position);
         if (pa !== pb) return pa - pb;
@@ -122,12 +147,26 @@ export default function TickerBar({ golferStats, show }) {
 
   if (!show || list.length === 0) return null;
 
+  // Find index where the CUT badge should be inserted: the first non-cut
+  // golfer whose score > cutLine. Golfers at exactly cutLine are "on the
+  // bubble" and render above the line.
+  const cutInsertIdx = showCut
+    ? list.findIndex(g => g.status !== 'cut' && g.score_to_par != null && g.score_to_par > cutLine)
+    : -1;
+
   const group = (
     <div className="ticker-group">
       <TickerBadge label={badgeLabel} />
-      {list.map((g, i) => (
-        <TickerItem key={`${g.name}-${i}`} golfer={g} />
-      ))}
+      {list.map((g, i) => {
+        const isCut = g.status === 'cut';
+        const isBelowCut = showCut && !isCut && g.score_to_par != null && g.score_to_par > cutLine;
+        return (
+          <span key={`${g.name}-${i}`} style={{ display: 'contents' }}>
+            {i === cutInsertIdx && <CutBadge cutLine={cutLine} />}
+            <TickerItem golfer={g} dimmed={isCut || isBelowCut} />
+          </span>
+        );
+      })}
     </div>
   );
 

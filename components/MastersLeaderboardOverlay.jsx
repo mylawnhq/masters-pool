@@ -354,7 +354,15 @@ function ScorecardExpanded({ holes, currentRound }) {
   );
 }
 
-export default function MastersLeaderboardOverlay({ open, onClose, golferStats }) {
+// Format a cut score number for display.
+function fmtCut(n) {
+  if (n == null) return '';
+  if (n === 0) return 'E';
+  return n > 0 ? `+${n}` : `${n}`;
+}
+
+export default function MastersLeaderboardOverlay({ open, onClose, golferStats, cutLine, currentRound }) {
+  const showCut = (currentRound ?? 0) >= 2 && cutLine != null;
   const [expanded, setExpanded] = useState(null);
   const [favorites, setFavorites] = useState([]);
   const [favoritesHydrated, setFavoritesHydrated] = useState(false);
@@ -514,28 +522,47 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
             />
             Masters Leaderboard
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              background: 'rgba(255,255,255,.12)',
-              border: 'none',
-              color: '#fff',
-              cursor: 'pointer',
-              width: 28,
-              height: 28,
-              borderRadius: '50%',
-              fontSize: 14,
-              lineHeight: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 0,
-            }}
-          >
-            ✕
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {showCut && (
+              <div
+                style={{
+                  background: '#c0392b',
+                  color: '#fff',
+                  fontSize: 9,
+                  fontWeight: 700,
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                CUT {fmtCut(cutLine)}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              style={{
+                background: 'rgba(255,255,255,.12)',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                fontSize: 14,
+                lineHeight: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+              }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Scrollable list */}
@@ -619,22 +646,42 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
                 String(g.position || '').replace(/[^\d]/g, ''),
                 10,
               );
-              const isOut = g.status === 'cut' || g.status === 'withdrawn';
+              const isOfficialCut = g.status === 'cut';
+              const isOut = isOfficialCut || g.status === 'withdrawn';
               const isTop3 =
                 !isOut &&
                 Number.isFinite(posNum) &&
                 posNum > 0 &&
                 posNum <= 3;
-              const posLabel = isOut
-                ? g.status === 'cut'
-                  ? 'CUT'
-                  : 'WD'
-                : g.position || '—';
+              // Cut-line derived states (only active during R2+).
+              const isBubble = showCut && !isOut && g.score_to_par != null && g.score_to_par === cutLine;
+              const isBelowCut = showCut && !isOut && g.score_to_par != null && g.score_to_par > cutLine;
+
+              const posLabel = isOfficialCut
+                ? 'MC'
+                : isOut
+                  ? 'WD'
+                  : g.position || '—';
+
+              const scoreLabel = isOfficialCut
+                ? 'MC'
+                : g.score_to_par == null ? '—' : fmtScore(g.score_to_par);
+              const scoreClr = isOfficialCut
+                ? '#8b7d6b'
+                : scoreColor(g.score_to_par, g.status);
+
               // Expansion state is keyed by name only so tapping a favorite in
               // the My Golfers section also reveals the scorecard if the same
               // player is viewed in the main list (and vice versa).
               const isExpanded = expanded === g.name;
               const isFav = favoritesSet.has(g.name);
+
+              // Left border color: amber for bubble, gold for top 3, else transparent
+              const leftBorder = isBubble
+                ? '#e6a817'
+                : isTop3
+                  ? '#d4af37'
+                  : 'transparent';
 
               return (
                 <div key={`${section}-${g.name}`}>
@@ -655,12 +702,12 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
                       gap: 8,
                       padding: '10px 14px',
                       alignItems: 'center',
-                      borderLeft: `3px solid ${isTop3 ? '#d4af37' : 'transparent'}`,
+                      borderLeft: `3px solid ${leftBorder}`,
                       borderBottom: '1px solid #f0ede5',
                       background: isExpanded
                         ? '#f7f4ef'
                         : i % 2 === 0 ? '#fff' : '#faf8f4',
-                      opacity: isOut ? 0.55 : 1,
+                      opacity: isOut || isBelowCut ? 0.4 : 1,
                       cursor: 'pointer',
                       textAlign: 'left',
                       outline: 'none',
@@ -712,21 +759,47 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
                       {posLabel}
                     </div>
 
-                    {/* Name + tap hint */}
+                    {/* Name + tap hint + bubble badge */}
                     <div style={{ minWidth: 0 }}>
                       <div
                         style={{
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: '#1a2e1a',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
                         }}
                       >
-                        {g.name}
+                        <span
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: '#1a2e1a',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            minWidth: 0,
+                          }}
+                        >
+                          {g.name}
+                        </span>
+                        {isBubble && (
+                          <span
+                            style={{
+                              fontSize: 7,
+                              fontWeight: 700,
+                              letterSpacing: 0.8,
+                              textTransform: 'uppercase',
+                              background: '#e6a817',
+                              color: '#fff',
+                              padding: '2px 5px',
+                              borderRadius: 3,
+                              flexShrink: 0,
+                            }}
+                          >
+                            Bubble
+                          </span>
+                        )}
                       </div>
-                      {!isOut && (
+                      {!isOut && !isBelowCut && (
                         <div
                           style={{
                             fontSize: 9,
@@ -748,12 +821,12 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
                       style={{
                         fontSize: 13,
                         fontWeight: 700,
-                        color: scoreColor(g.score_to_par, g.status),
+                        color: scoreClr,
                         fontFamily: bask,
                         textAlign: 'right',
                       }}
                     >
-                      {g.score_to_par == null ? '—' : fmtScore(g.score_to_par)}
+                      {scoreLabel}
                     </div>
 
                     {/* Thru */}
@@ -815,7 +888,67 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats }
                 )}
 
                 {/* Full field (or flat filtered results while searching) */}
-                {filtered.map((g, i) => renderRow(g, i, 'main'))}
+                {filtered.map((g, i) => {
+                  // Insert a projected-cut separator before the first
+                  // below-cut golfer who isn't officially cut yet.
+                  const showSep =
+                    showCut &&
+                    !isSearching &&
+                    i > 0 &&
+                    g.status !== 'cut' &&
+                    g.status !== 'withdrawn' &&
+                    g.score_to_par != null &&
+                    g.score_to_par > cutLine &&
+                    (() => {
+                      const prev = filtered[i - 1];
+                      return (
+                        prev &&
+                        prev.status !== 'cut' &&
+                        prev.status !== 'withdrawn' &&
+                        (prev.score_to_par == null || prev.score_to_par <= cutLine)
+                      );
+                    })();
+                  return (
+                    <span key={`main-wrap-${g.name}`} style={{ display: 'contents' }}>
+                      {showSep && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            padding: '10px 16px',
+                          }}
+                        >
+                          <div
+                            style={{
+                              flex: 1,
+                              borderTop: '2px dashed #c0392b',
+                            }}
+                          />
+                          <span
+                            style={{
+                              fontSize: 9,
+                              fontWeight: 700,
+                              letterSpacing: 1.2,
+                              textTransform: 'uppercase',
+                              color: '#c0392b',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            Projected Cut {fmtCut(cutLine)}
+                          </span>
+                          <div
+                            style={{
+                              flex: 1,
+                              borderTop: '2px dashed #c0392b',
+                            }}
+                          />
+                        </div>
+                      )}
+                      {renderRow(g, i, 'main')}
+                    </span>
+                  );
+                })}
 
                 {isSearching && filtered.length === 0 && (
                   <div

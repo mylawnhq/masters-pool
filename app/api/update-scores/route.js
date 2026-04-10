@@ -161,6 +161,13 @@ async function fetchFromESPN() {
 
   const currentRound = detectCurrentRound(competition);
 
+  // ESPN publishes the live projected cut score at tournament level.
+  // It's an integer representing score-to-par (e.g. 3 means +3).
+  const cutScore =
+    typeof event?.tournament?.cutScore === 'number'
+      ? event.tournament.cutScore
+      : null;
+
   const leaderboard = competitors.map(c => {
     const name = c.athlete?.displayName || c.athlete?.fullName || 'Unknown';
 
@@ -214,7 +221,7 @@ async function fetchFromESPN() {
     };
   });
 
-  return { leaderboard, currentRound };
+  return { leaderboard, currentRound, cutScore };
 }
 
 export async function GET(request) {
@@ -241,7 +248,7 @@ export async function GET(request) {
 
     // Fetch leaderboard first to detect the current round, then pass it to
     // the scorecard parser so it pulls the right round's hole data.
-    const { leaderboard, currentRound } = await fetchFromESPN();
+    const { leaderboard, currentRound, cutScore } = await fetchFromESPN();
 
     // Scorecard fetch uses the detected round — best-effort, failures don't
     // break the main upsert.
@@ -255,7 +262,7 @@ export async function GET(request) {
     // fetch succeeded — otherwise we leave the existing column values alone
     // instead of nuking them to null.
     const lbRows = leaderboard.map(g => {
-      const row = { ...g, updated_at: now };
+      const row = { ...g, updated_at: now, cut_line: cutScore };
       if (scorecards) {
         row.current_round_scores = scorecards.get(g.golfer_name.toLowerCase()) ?? null;
         row.current_round = currentRound;
@@ -268,8 +275,8 @@ export async function GET(request) {
       .upsert(lbRows, { onConflict: 'golfer_name' });
     // If the new columns haven't been migrated yet, retry without them so
     // live scoring keeps working until the DDL is applied.
-    if (lbErr && /current_round/i.test(lbErr.message || '')) {
-      const slim = lbRows.map(({ current_round_scores, current_round, ...rest }) => rest);
+    if (lbErr && /current_round|cut_line/i.test(lbErr.message || '')) {
+      const slim = lbRows.map(({ current_round_scores, current_round, cut_line, ...rest }) => rest);
       const retry = await supabase
         .from('golfer_leaderboard')
         .upsert(slim, { onConflict: 'golfer_name' });
@@ -301,6 +308,7 @@ export async function GET(request) {
       success: true,
       source,
       currentRound,
+      cutScore,
       golfersUpdated: leaderboard.length,
       scorecardsLoaded: scorecards ? scorecards.size : 0,
       leader: leader

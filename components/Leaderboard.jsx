@@ -140,6 +140,21 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
   // Live aggregate-score mode: T–Sat, ranking by sum of golfer score_to_par.
   // Earnings mode is intentionally not surfaced yet — it'll be flipped on Sunday.
   const liveMode = scoresLive && hasLiveScores;
+
+  // Derive cut-line values from any row in golferStats (every row carries the
+  // same value per cron cycle). These drive the cut line visuals across the
+  // mobile header, ticker, overlay, and pick cards.
+  const { cutLine, currentRound, showCutFeatures } = useMemo(() => {
+    const vals = Object.values(golferStats);
+    const cl = vals.find(v => v.cut_line != null)?.cut_line ?? null;
+    const cr = vals.find(v => v.current_round != null)?.current_round ?? 1;
+    return {
+      cutLine: cl,
+      currentRound: cr,
+      showCutFeatures: liveMode && cr >= 2 && cl != null,
+    };
+  }, [golferStats, liveMode]);
+
   const totalEntries = entries.length;
   const poolPurse = totalEntries * 25;
 
@@ -156,8 +171,8 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
         const fetchGolfers = async () => {
           const res = await supabase
             .from('golfer_leaderboard')
-            .select('golfer_name, position, score_to_par, thru, status, current_round_scores, current_round, updated_at');
-          if (res.error && /current_round/i.test(res.error.message || '')) {
+            .select('golfer_name, position, score_to_par, thru, status, current_round_scores, current_round, cut_line, updated_at');
+          if (res.error && /current_round|cut_line/i.test(res.error.message || '')) {
             return supabase
               .from('golfer_leaderboard')
               .select('golfer_name, position, score_to_par, thru, status, updated_at');
@@ -180,6 +195,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
               status: r.status,
               current_round_scores: r.current_round_scores ?? null,
               current_round: r.current_round ?? 1,
+              cut_line: r.cut_line ?? null,
             };
             if (r.updated_at && (!newest || r.updated_at > newest)) newest = r.updated_at;
           });
@@ -407,8 +423,8 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
             </div>
           </div>
 
-          {/* Row 3: three small tiles (1st/2nd/3rd) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginTop: 8 }}>
+          {/* Row 3: small tiles (1st/2nd/3rd + optional projected cut) */}
+          <div style={{ display: 'grid', gridTemplateColumns: showCutFeatures ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 6, marginTop: 8 }}>
             {[
               { amt: Math.round(poolPurse * 0.6), label: '1st', color: '#d4af37' },
               { amt: Math.round(poolPurse * 0.3), label: '2nd', color: 'rgba(255,255,255,.6)' },
@@ -432,6 +448,24 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                 </div>
               </div>
             ))}
+            {showCutFeatures && (
+              <div style={{
+                background: '#c0392b', borderRadius: 6,
+                padding: '6px 6px', textAlign: 'center', minWidth: 0,
+              }}>
+                <div style={{
+                  fontFamily: bask, fontSize: 13, fontWeight: 700, color: '#fff', lineHeight: 1,
+                }}>
+                  {cutLine > 0 ? `+${cutLine}` : cutLine === 0 ? 'E' : `${cutLine}`}
+                </div>
+                <div style={{
+                  fontSize: 6, letterSpacing: 1.5, textTransform: 'uppercase',
+                  color: 'rgba(255,255,255,.7)', fontWeight: 700, marginTop: 3,
+                }}>
+                  Proj. Cut
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Row 4: Masters Leaderboard button — only when scores are live */}
@@ -477,7 +511,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
         </div>
 
         {/* Live golfer ticker — only renders when scores are live */}
-        <TickerBar golferStats={golferStats} show={liveMode} />
+        <TickerBar golferStats={golferStats} show={liveMode} cutLine={cutLine} currentRound={currentRound} />
 
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px' }}>
           {/* Title block — hidden on mobile */}
@@ -779,6 +813,8 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                               .map(({ p, stat }, gi) => {
                                 const isCut = stat?.status === 'cut' || stat?.status === 'withdrawn';
                                 const score = stat?.score_to_par;
+                                const gBubble = showCutFeatures && !isCut && score != null && score === cutLine;
+                                const gBelowCut = showCutFeatures && !isCut && score != null && score > cutLine;
                                 return (
                                   <div key={gi} style={{
                                     display: 'grid',
@@ -788,18 +824,29 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                                     color: isCut ? '#c0392b' : '#1a2e1a',
                                     borderBottom: gi < 5 ? '1px solid #f3efe6' : 'none',
                                     alignItems: 'center',
+                                    opacity: isCut || gBelowCut ? 0.4 : 1,
                                   }}>
                                     <div style={{ fontFamily: bask, fontWeight: 700, fontSize: 12 }}>
                                       {isCut ? 'MC' : (stat?.position || '—')}
                                     </div>
-                                    <div style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                      {p.golfer}
+                                    <div style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                      <span>{p.golfer}</span>
+                                      {gBubble && (
+                                        <span style={{ fontSize: 7, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', background: '#e6a817', color: '#fff', padding: '1px 4px', borderRadius: 2, flexShrink: 0 }}>
+                                          Bubble
+                                        </span>
+                                      )}
+                                      {gBelowCut && (
+                                        <span style={{ fontSize: 7, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', background: '#c0392b', color: '#fff', padding: '1px 4px', borderRadius: 2, flexShrink: 0 }}>
+                                          Below cut
+                                        </span>
+                                      )}
                                     </div>
                                     <div style={{
                                       textAlign: 'right', fontFamily: bask, fontWeight: 700,
                                       color: isCut ? '#c0392b' : parColor(score),
                                     }}>
-                                      {isCut ? '—' : fmtPar(score)}
+                                      {isCut ? 'MC' : fmtPar(score)}
                                     </div>
                                     <div style={{ textAlign: 'right', fontSize: 11, color: isCut ? '#c0392b' : '#8b7d6b' }}>
                                       {isCut ? '—' : (stat?.thru || '—')}
@@ -847,28 +894,48 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                         const pe = hasEarnings ? (earnings[p.golfer] || 0) : null;
                         const stat = liveMode ? golferStats[p.golfer] : null;
                         const isCut = stat && (stat.status === 'cut' || stat.status === 'withdrawn');
+                        const gBubble = showCutFeatures && stat && !isCut && stat.score_to_par != null && stat.score_to_par === cutLine;
+                        const gBelowCut = showCutFeatures && stat && !isCut && stat.score_to_par != null && stat.score_to_par > cutLine;
                         const spaceIdx = p.golfer.indexOf(' ');
                         const firstName = spaceIdx === -1 ? p.golfer : p.golfer.slice(0, spaceIdx);
                         const lastName = spaceIdx === -1 ? '' : p.golfer.slice(spaceIdx + 1);
                         const count = pickCounts[p.golfer] || 0;
-                        const barColor = liveMode
-                          ? cardBarColor(stat)
-                          : !hasEarnings ? '#006B54'
-                            : pe >= 1e6 ? '#006B54'
-                            : pe >= 4e5 ? '#2a9d6e'
-                            : pe >= 1e5 ? '#8bb89e'
-                            : '#d9d3c7';
+                        const barColor = gBubble
+                          ? '#e6a817'
+                          : gBelowCut
+                            ? '#c0392b'
+                            : liveMode
+                              ? cardBarColor(stat)
+                              : !hasEarnings ? '#006B54'
+                                : pe >= 1e6 ? '#006B54'
+                                : pe >= 4e5 ? '#2a9d6e'
+                                : pe >= 1e5 ? '#8bb89e'
+                                : '#d9d3c7';
+                        const cardBadge = isCut ? 'MC' : gBubble ? 'BUBBLE' : gBelowCut ? 'BELOW CUT' : null;
+                        const badgeBg = isCut ? '#c0392b' : gBubble ? '#e6a817' : '#c0392b';
                         return (
                           <div key={i} className="pick-card" style={{
                             background: '#fff', borderRadius: 8,
                             border: '1px solid #e0dbd2', padding: '14px 14px 12px',
                             boxShadow: '0 1px 4px rgba(0,0,0,.04)',
                             position: 'relative', overflow: 'hidden', minWidth: 0,
+                            opacity: isCut || gBelowCut ? 0.4 : 1,
                           }}>
                             <div style={{
                               position: 'absolute', top: 0, left: 0, right: 0, height: 3,
                               background: barColor,
                             }} />
+                            {cardBadge && (
+                              <div style={{
+                                position: 'absolute', top: 5, right: 5,
+                                fontSize: 6, fontWeight: 700, letterSpacing: 0.6,
+                                textTransform: 'uppercase', color: '#fff',
+                                background: badgeBg, padding: '2px 5px',
+                                borderRadius: 3, lineHeight: 1,
+                              }}>
+                                {cardBadge}
+                              </div>
+                            )}
                             <div className="pick-group" style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: '#006B54', fontWeight: 700, marginBottom: 6 }}>
                               {p.group}
                             </div>
@@ -894,7 +961,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                                   fontSize: 14, fontWeight: 700, fontFamily: bask,
                                   color: isCut ? '#c0392b' : parColor(stat?.score_to_par),
                                 }}>
-                                  {isCut ? '—' : fmtPar(stat?.score_to_par)}
+                                  {isCut ? 'MC' : fmtPar(stat?.score_to_par)}
                                 </span>
                               </div>
                             )}
@@ -1031,6 +1098,8 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
         open={leaderboardOpen && liveMode}
         onClose={() => setLeaderboardOpen(false)}
         golferStats={golferStats}
+        cutLine={cutLine}
+        currentRound={currentRound}
       />
     </div>
   );

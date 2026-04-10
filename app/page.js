@@ -49,8 +49,8 @@ async function getData() {
   try {
     const res = await supabase
       .from('golfer_leaderboard')
-      .select('golfer_name, position, score_to_par, thru, status, current_round_scores, current_round, updated_at');
-    if (res.error && /current_round/i.test(res.error.message || '')) {
+      .select('golfer_name, position, score_to_par, thru, status, current_round_scores, current_round, cut_line, updated_at');
+    if (res.error && /current_round|cut_line/i.test(res.error.message || '')) {
       const retry = await supabase
         .from('golfer_leaderboard')
         .select('golfer_name, position, score_to_par, thru, status, updated_at');
@@ -72,6 +72,7 @@ async function getData() {
       status: row.status,
       current_round_scores: row.current_round_scores ?? null,
       current_round: row.current_round ?? 1,
+      cut_line: row.cut_line ?? null,
     };
     if (row.updated_at && (!lastUpdated || row.updated_at > lastUpdated)) {
       lastUpdated = row.updated_at;
