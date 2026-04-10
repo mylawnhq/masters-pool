@@ -1,7 +1,53 @@
 'use client';
+import { useState, useRef } from 'react';
 
 const bask = "'Libre Baskerville', Georgia, serif";
 const sans = "'Source Sans 3', 'Helvetica Neue', sans-serif";
+
+const HTML2CANVAS_CDN =
+  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+
+// Load html2canvas from a CDN exactly once per page lifetime and cache the
+// resulting promise. Returns window.html2canvas when ready.
+let html2canvasPromise = null;
+function loadHtml2Canvas() {
+  if (typeof window === 'undefined') return Promise.reject(new Error('SSR'));
+  if (window.html2canvas) return Promise.resolve(window.html2canvas);
+  if (html2canvasPromise) return html2canvasPromise;
+  html2canvasPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[src="${HTML2CANVAS_CDN}"]`);
+    if (existing) {
+      existing.addEventListener('load', () => resolve(window.html2canvas));
+      existing.addEventListener('error', () => reject(new Error('html2canvas load failed')));
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = HTML2CANVAS_CDN;
+    script.async = true;
+    script.crossOrigin = 'anonymous';
+    script.onload = () => {
+      if (window.html2canvas) resolve(window.html2canvas);
+      else reject(new Error('html2canvas loaded but window.html2canvas is missing'));
+    };
+    script.onerror = () => {
+      html2canvasPromise = null;
+      reject(new Error('html2canvas CDN fetch failed'));
+    };
+    document.head.appendChild(script);
+  });
+  return html2canvasPromise;
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 const TOP_5 = [
   {
@@ -324,6 +370,71 @@ function ChalkVsContrarian() {
 }
 
 export default function Day1Recap() {
+  const cardRef = useRef(null);
+  const [status, setStatus] = useState('idle'); // idle | working | copied | downloaded | error
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleCopy = async () => {
+    if (status === 'working') return;
+    setStatus('working');
+    setErrorMsg('');
+    try {
+      const node = cardRef.current;
+      if (!node) throw new Error('Recap card not mounted');
+
+      const html2canvas = await loadHtml2Canvas();
+      const canvas = await html2canvas(node, {
+        backgroundColor: '#e8e2d4',
+        scale: Math.min(3, (window.devicePixelRatio || 1) * 2),
+        useCORS: true,
+        logging: false,
+      });
+
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Canvas blob failed'))), 'image/png');
+      });
+
+      // Try the async Clipboard API first. Many browsers (especially Safari
+      // and any non-secure context) refuse this, so the catch falls through
+      // to a PNG download instead.
+      let clipboardOk = false;
+      if (
+        typeof navigator !== 'undefined' &&
+        navigator.clipboard &&
+        typeof window.ClipboardItem === 'function' &&
+        typeof navigator.clipboard.write === 'function'
+      ) {
+        try {
+          await navigator.clipboard.write([
+            new window.ClipboardItem({ 'image/png': blob }),
+          ]);
+          clipboardOk = true;
+        } catch {
+          clipboardOk = false;
+        }
+      }
+
+      if (clipboardOk) {
+        setStatus('copied');
+      } else {
+        downloadBlob(blob, 'masters-pool-day-1-recap.png');
+        setStatus('downloaded');
+      }
+      setTimeout(() => setStatus('idle'), 2400);
+    } catch (err) {
+      setErrorMsg(err?.message || 'Something went wrong');
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 3500);
+    }
+  };
+
+  const buttonLabel =
+    status === 'working' ? 'Rendering…'
+    : status === 'copied' ? '✓ Copied!'
+    : status === 'downloaded' ? '✓ Downloaded'
+    : status === 'error' ? 'Try again'
+    : 'Copy as Image';
+
   return (
     <div
       style={{
@@ -333,8 +444,50 @@ export default function Day1Recap() {
         color: '#1a2e1a',
       }}
     >
+      {/* Copy button — sits above the card, hidden from the screenshot. */}
+      <div
+        style={{
+          maxWidth: 720,
+          margin: '0 auto 18px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        <button
+          type="button"
+          onClick={handleCopy}
+          disabled={status === 'working'}
+          style={{
+            background: status === 'error' ? '#c0392b' : '#006B54',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 999,
+            padding: '11px 22px',
+            fontFamily: sans,
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: 1.5,
+            textTransform: 'uppercase',
+            cursor: status === 'working' ? 'wait' : 'pointer',
+            boxShadow: '0 3px 10px rgba(0,107,84,.22)',
+            transition: 'transform 120ms ease, background 120ms ease',
+            opacity: status === 'working' ? 0.7 : 1,
+          }}
+        >
+          {buttonLabel}
+        </button>
+        {status === 'error' && errorMsg && (
+          <div style={{ fontSize: 11, color: '#c0392b', fontStyle: 'italic' }}>
+            {errorMsg}
+          </div>
+        )}
+      </div>
+
       <div
         id="day1-recap-card"
+        ref={cardRef}
         style={{
           maxWidth: 720,
           margin: '0 auto',
@@ -531,7 +684,7 @@ export default function Day1Recap() {
           fontStyle: 'italic',
         }}
       >
-        Screenshot this card and send it to the group.
+        Tap “Copy as Image” above to grab the recap card.
       </div>
     </div>
   );
