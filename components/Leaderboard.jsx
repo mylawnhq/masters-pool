@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { logEvent } from '@/lib/analytics';
 import TickerBar from './TickerBar';
 import MastersLeaderboardOverlay from './MastersLeaderboardOverlay';
+import { POOL_HISTORY } from '@/lib/poolHistory';
 
 const fmt = n => n >= 1e6 ? `$${(n/1e6).toFixed(2)}M` : n >= 1e3 ? `$${(n/1e3).toFixed(0)}K` : `$${n.toLocaleString()}`;
 const fmtFull = n => `$${n.toLocaleString()}`;
@@ -1073,32 +1074,89 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                       </div>
                     </div>
 
-                    {/* Share button */}
-                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-                      {(() => {
-                        const isCopied = copiedId === entry.id;
-                        return (
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); handleShare(entry); }}
-                            style={{
-                              background: isCopied ? '#006B54' : '#fff',
-                              border: '1px solid #d9d3c7',
-                              color: isCopied ? '#fff' : '#006B54',
-                              borderRadius: 6,
-                              padding: '8px 16px',
-                              fontSize: 12,
-                              fontWeight: 600,
-                              fontFamily: sans,
-                              letterSpacing: 0.3,
-                              cursor: 'pointer',
-                              transition: 'background .15s, color .15s',
-                            }}
-                          >
-                            {isCopied ? '✓ Copied!' : 'Share picks'}
-                          </button>
-                        );
-                      })()}
+                    {/* Pool History + Share button */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center',
+                      marginTop: 16, paddingTop: 12, borderTop: '1px solid #e0dbd2',
+                      gap: 12,
+                    }}>
+                      {/* Pool History */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: 9, fontWeight: 700, letterSpacing: 2,
+                          textTransform: 'uppercase', color: '#8b7d6b',
+                          marginBottom: 7, fontFamily: sans,
+                        }}>
+                          Pool History
+                        </div>
+                        <div style={{ display: 'flex', gap: 5 }}>
+                          {[2020, 2021, 2023, 2024, 2025].map(year => {
+                            const history = POOL_HISTORY[entry.name] || {};
+                            const place = history[String(year)] ?? '-';
+                            const isPlaced = place && place !== '-';
+                            const num = isPlaced ? parseInt(place, 10) : null;
+                            const isTop10 = num != null && num <= 10;
+                            const isTop25 = num != null && num <= 25;
+                            const label = year === 2021 ? "'21" : `'${String(year).slice(2)}`;
+                            return (
+                              <div key={year} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                                <span style={{
+                                  fontSize: 9, fontWeight: 700, letterSpacing: 1,
+                                  textTransform: 'uppercase', color: '#8b7d6b',
+                                  fontFamily: sans,
+                                }}>
+                                  {label}
+                                </span>
+                                <div style={{
+                                  width: 36, height: 32, borderRadius: 5,
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  background: isTop10 ? '#006B54' : isTop25 ? 'rgba(0,107,84,0.1)' : isPlaced ? '#f7f4ef' : 'transparent',
+                                  border: isTop10 ? 'none' : isTop25 ? '1px solid rgba(0,107,84,0.25)' : isPlaced ? '1px solid #e0dbd2' : 'none',
+                                }}>
+                                  <span style={{
+                                    fontSize: isPlaced ? 12 : 15,
+                                    fontFamily: bask,
+                                    fontWeight: isTop10 ? 700 : 400,
+                                    color: isTop10 ? '#fff' : isTop25 ? '#006B54' : isPlaced ? '#1a2e1a' : '#d9d3c7',
+                                    lineHeight: 1,
+                                  }}>
+                                    {isPlaced ? num : '—'}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Share picks */}
+                      <div style={{ flexShrink: 0 }}>
+                        {(() => {
+                          const isCopied = copiedId === entry.id;
+                          return (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleShare(entry); }}
+                              style={{
+                                background: isCopied ? '#006B54' : '#fff',
+                                border: '1px solid #d9d3c7',
+                                color: isCopied ? '#fff' : '#006B54',
+                                borderRadius: 6,
+                                padding: '8px 16px',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                fontFamily: sans,
+                                letterSpacing: 0.3,
+                                cursor: 'pointer',
+                                transition: 'background .15s, color .15s',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {isCopied ? '✓ Copied!' : 'Share picks'}
+                            </button>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </div>
                 </div>
