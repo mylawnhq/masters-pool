@@ -927,22 +927,18 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                               position: 'absolute', top: 0, left: 0, right: 0, height: 3,
                               background: barColor,
                             }} />
-                            {cardBadge && (
-                              <div style={{
-                                position: 'absolute', top: 6, right: 6,
-                                fontSize: 5, fontWeight: 700, letterSpacing: 0.5,
-                                textTransform: 'uppercase', color: '#fff',
-                                background: badgeBg, padding: '2px 4px',
-                                borderRadius: 2, lineHeight: 1,
-                                maxWidth: 'calc(100% - 70px)',
-                                overflow: 'hidden', textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}>
-                                {cardBadge}
-                              </div>
-                            )}
-                            <div className="pick-group" style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: gBubble ? '#d4af37' : '#006B54', fontWeight: 700, marginBottom: 6 }}>
-                              {p.group}
+                            <div className="pick-group" style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: gBubble ? '#d4af37' : '#006B54', fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span>{p.group}</span>
+                              {cardBadge && (
+                                <span style={{
+                                  fontSize: 7, fontWeight: 700, letterSpacing: 0.5,
+                                  color: '#fff', background: badgeBg,
+                                  padding: '2px 5px', borderRadius: 2,
+                                  lineHeight: 1,
+                                }}>
+                                  {cardBadge}
+                                </span>
+                              )}
                             </div>
                             <div className="pick-name" style={{ color: '#1a2e1a', marginBottom: 4, lineHeight: 1.2 }}>
                               <div style={{ fontSize: 12, fontWeight: 500 }}>{firstName}</div>
