@@ -362,9 +362,14 @@ export default function HistoricalView() {
     setAllData(prev => ({ ...prev, [year]: rows }));
   }, []);
 
-  // Save current year's final results
+  // Save current year's final results (password-protected)
   const save2026 = async () => {
     if (saveStatus === 'saving' || has2026) return;
+    const pw = window.prompt(`Enter the password to save ${CURRENT_YEAR} results:`);
+    if (pw !== 'butlercabin') {
+      if (pw !== null) { setSaveStatus('error'); setSaveMsg('Incorrect password'); setTimeout(() => setSaveStatus('idle'), 3000); }
+      return;
+    }
     setSaveStatus('saving');
     setSaveMsg('');
 
