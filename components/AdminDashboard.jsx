@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import Day1Recap from './Day1Recap';
+import HistoricalView from './HistoricalView';
 
 const bask = "'Libre Baskerville', Georgia, serif";
 const sans = "'Source Sans 3', 'Helvetica Neue', sans-serif";
@@ -118,8 +119,9 @@ function AdminShell() {
   const [tab, setTab] = useState('analytics');
 
   const tabs = [
-    { id: 'analytics', label: 'Analytics' },
-    { id: 'recap',     label: 'Day 1 Recap' },
+    { id: 'analytics',  label: 'Analytics' },
+    { id: 'recap',      label: 'Day 1 Recap' },
+    { id: 'historical', label: 'Historical' },
   ];
 
   return (
@@ -183,7 +185,9 @@ function AdminShell() {
       </div>
 
       {/* Tab body */}
-      {tab === 'analytics' ? <AnalyticsView /> : <Day1Recap />}
+      {tab === 'analytics' && <AnalyticsView />}
+      {tab === 'recap' && <Day1Recap />}
+      {tab === 'historical' && <HistoricalView />}
     </div>
   );
 }
