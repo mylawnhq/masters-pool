@@ -38,41 +38,6 @@ const TOP_5 = [
   },
 ];
 
-const HIGHLIGHTS = [
-  {
-    label: 'Best Golfer for the Pool',
-    name: 'Sam Burns',
-    primary: '67',
-    primaryNote: '(-5)',
-    detail: 'picked by 29 teams',
-    accent: '#006B54',
-  },
-  {
-    label: 'Worst Golfer for the Pool',
-    name: 'Bryson DeChambeau',
-    primary: '76',
-    primaryNote: '(+4)',
-    detail: 'hurt 126 teams',
-    accent: '#c0392b',
-  },
-  {
-    label: 'Biggest Sleeper',
-    name: 'Rory McIlroy',
-    primary: '67',
-    primaryNote: '(-5)',
-    detail: 'only picked by 34',
-    accent: '#d4af37',
-  },
-  {
-    label: 'Most Unique Team in Top 10',
-    name: 'Cecil Gant',
-    primary: 'T9',
-    primaryNote: '',
-    detail: 'low overlap with field',
-    accent: '#006B54',
-  },
-];
-
 function fmtPar(n) {
   if (n === 0) return 'E';
   return n > 0 ? `+${n}` : `${n}`;
@@ -80,38 +45,96 @@ function fmtPar(n) {
 
 function StandingRow({ entry }) {
   const highlighted = entry.highlighted;
-  const bg = highlighted ? '#006B54' : '#fff';
-  const nameColor = highlighted ? '#fff' : '#1a2e1a';
-  const rankColor = highlighted ? '#d4af37' : '#8b7d6b';
-  const scoreColor = highlighted ? '#d4af37' : '#006B54';
-  const picksColor = highlighted ? 'rgba(255,255,255,.78)' : '#8b7d6b';
-  const border = highlighted ? 'none' : '1px solid #e0dbd2';
+
+  const wrap = {
+    display: 'grid',
+    gridTemplateColumns: '56px 1fr auto',
+    alignItems: 'center',
+    columnGap: 18,
+    borderRadius: 14,
+    padding: '22px 26px',
+    marginBottom: 14,
+  };
+
+  if (highlighted) {
+    return (
+      <div
+        style={{
+          ...wrap,
+          background: '#006B54',
+          boxShadow: '0 4px 14px rgba(0,107,84,.22)',
+        }}
+      >
+        <div
+          style={{
+            fontFamily: bask,
+            fontStyle: 'italic',
+            fontSize: 32,
+            fontWeight: 700,
+            color: '#d4af37',
+            textAlign: 'center',
+            lineHeight: 1,
+          }}
+        >
+          {entry.rank}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div
+            style={{
+              fontFamily: bask,
+              fontSize: 22,
+              fontWeight: 700,
+              color: '#fff',
+              lineHeight: 1.15,
+            }}
+          >
+            {entry.name}
+          </div>
+          <div
+            style={{
+              fontSize: 12.5,
+              color: 'rgba(240,228,190,.78)',
+              marginTop: 6,
+              letterSpacing: 0.2,
+            }}
+          >
+            {entry.picks.join(' · ')}
+          </div>
+        </div>
+        <div
+          style={{
+            fontFamily: bask,
+            fontSize: 34,
+            fontWeight: 700,
+            color: '#d4af37',
+            textAlign: 'right',
+            lineHeight: 1,
+          }}
+        >
+          {fmtPar(entry.score)}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       style={{
-        display: 'grid',
-        gridTemplateColumns: '46px 1fr 62px',
-        gap: 14,
-        alignItems: 'center',
-        background: bg,
-        border,
-        borderRadius: 8,
-        padding: '14px 18px',
-        marginBottom: 10,
-        boxShadow: highlighted
-          ? '0 3px 10px rgba(0,107,84,.18)'
-          : '0 1px 3px rgba(0,0,0,.04)',
+        ...wrap,
+        background: '#fff',
+        border: '1px solid #e8e3d6',
+        boxShadow: '0 1px 2px rgba(0,0,0,.03)',
       }}
     >
       <div
         style={{
           fontFamily: bask,
           fontStyle: 'italic',
-          fontSize: 22,
+          fontSize: 32,
           fontWeight: 700,
-          color: rankColor,
+          color: '#c5a959',
           textAlign: 'center',
+          lineHeight: 1,
         }}
       >
         {entry.rank}
@@ -120,20 +143,19 @@ function StandingRow({ entry }) {
         <div
           style={{
             fontFamily: bask,
-            fontSize: 17,
+            fontSize: 22,
             fontWeight: 700,
-            color: nameColor,
-            lineHeight: 1.2,
+            color: '#1a2e1a',
+            lineHeight: 1.15,
           }}
         >
           {entry.name}
         </div>
         <div
           style={{
-            fontSize: 11,
-            color: picksColor,
-            marginTop: 4,
-            fontWeight: 500,
+            fontSize: 12.5,
+            color: '#a5998a',
+            marginTop: 6,
             letterSpacing: 0.2,
           }}
         >
@@ -143,9 +165,9 @@ function StandingRow({ entry }) {
       <div
         style={{
           fontFamily: bask,
-          fontSize: 26,
+          fontSize: 34,
           fontWeight: 700,
-          color: scoreColor,
+          color: '#406154',
           textAlign: 'right',
           lineHeight: 1,
         }}
@@ -156,237 +178,146 @@ function StandingRow({ entry }) {
   );
 }
 
-function HighlightCard({ item }) {
+function HighlightCard({ label, name, detail, detailColor }) {
   return (
     <div
       style={{
         background: '#fff',
-        border: '1px solid #e0dbd2',
-        borderRadius: 10,
-        padding: '16px 18px',
-        boxShadow: '0 1px 3px rgba(0,0,0,.05)',
+        border: '1px solid #e8e3d6',
+        borderRadius: 14,
+        padding: '22px 24px 24px',
         display: 'flex',
         flexDirection: 'column',
+        gap: 10,
         minHeight: 132,
+        boxShadow: '0 1px 2px rgba(0,0,0,.03)',
       }}
     >
       <div
         style={{
-          fontSize: 9,
+          fontSize: 10,
           letterSpacing: 2,
           textTransform: 'uppercase',
-          color: '#8b7d6b',
           fontWeight: 700,
-          marginBottom: 10,
+          color: '#006B54',
         }}
       >
-        {item.label}
+        {label}
       </div>
       <div
         style={{
           fontFamily: bask,
-          fontSize: 18,
           fontWeight: 700,
+          fontSize: 22,
           color: '#1a2e1a',
-          marginBottom: 6,
-          lineHeight: 1.2,
-        }}
-      >
-        {item.name}
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          gap: 6,
-          marginTop: 'auto',
-        }}
-      >
-        <span
-          style={{
-            fontFamily: bask,
-            fontSize: 32,
-            fontWeight: 700,
-            color: item.accent,
-            lineHeight: 1,
-          }}
-        >
-          {item.primary}
-        </span>
-        {item.primaryNote && (
-          <span
-            style={{
-              fontFamily: bask,
-              fontSize: 14,
-              fontWeight: 700,
-              color: item.accent,
-            }}
-          >
-            {item.primaryNote}
-          </span>
-        )}
-      </div>
-      <div
-        style={{
-          fontSize: 11,
-          color: '#8b7d6b',
-          marginTop: 6,
-          fontStyle: 'italic',
-        }}
-      >
-        {item.detail}
-      </div>
-    </div>
-  );
-}
-
-function ChalkContrarianCard() {
-  const Side = ({ tag, name, pct, score, scoreLabel, color, tagColor, tagBg }) => (
-    <div
-      style={{
-        flex: 1,
-        padding: '14px 14px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        textAlign: 'center',
-        minWidth: 0,
-      }}
-    >
-      <div
-        style={{
-          fontSize: 8,
-          letterSpacing: 2,
-          textTransform: 'uppercase',
-          fontWeight: 700,
-          color: tagColor,
-          background: tagBg,
-          padding: '3px 10px',
-          borderRadius: 999,
-          marginBottom: 10,
-        }}
-      >
-        {tag}
-      </div>
-      <div
-        style={{
-          fontFamily: bask,
-          fontSize: 15,
-          fontWeight: 700,
-          color: '#1a2e1a',
-          lineHeight: 1.2,
-          marginBottom: 4,
+          lineHeight: 1.15,
         }}
       >
         {name}
       </div>
       <div
         style={{
-          fontSize: 10,
-          color: '#8b7d6b',
-          marginBottom: 10,
-          fontWeight: 600,
+          fontSize: 13,
+          color: detailColor || '#8b7d6b',
+          fontWeight: 500,
+          marginTop: 'auto',
         }}
       >
-        {pct} picked
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          gap: 4,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: bask,
-            fontSize: 30,
-            fontWeight: 700,
-            color,
-            lineHeight: 1,
-          }}
-        >
-          {score}
-        </span>
-        <span
-          style={{
-            fontFamily: bask,
-            fontSize: 13,
-            fontWeight: 700,
-            color,
-          }}
-        >
-          {scoreLabel}
-        </span>
+        {detail}
       </div>
     </div>
   );
+}
 
+function ChalkVsContrarian() {
   return (
     <div
       style={{
         background: '#fff',
-        border: '1px solid #e0dbd2',
-        borderRadius: 10,
-        padding: '18px 16px 20px',
-        boxShadow: '0 1px 3px rgba(0,0,0,.05)',
+        border: '1px solid #e8e3d6',
+        borderRadius: 14,
+        padding: '22px 26px 26px',
+        boxShadow: '0 1px 2px rgba(0,0,0,.03)',
       }}
     >
       <div
         style={{
           fontSize: 10,
-          letterSpacing: 2.5,
+          letterSpacing: 2,
           textTransform: 'uppercase',
-          color: '#006B54',
           fontWeight: 700,
-          textAlign: 'center',
-          marginBottom: 14,
+          color: '#006B54',
+          marginBottom: 18,
         }}
       >
         Chalk vs Contrarian
       </div>
-      <div style={{ display: 'flex', alignItems: 'stretch', gap: 0 }}>
-        <Side
-          tag="The Chalk"
-          name="Bryson DeChambeau"
-          pct="42%"
-          score="76"
-          scoreLabel="(+4)"
-          color="#c0392b"
-          tagColor="#8b7d6b"
-          tagBg="#f0ede5"
-        />
-        <div
-          style={{
-            width: 1,
-            alignSelf: 'stretch',
-            background: 'linear-gradient(180deg, transparent, #e0dbd2, transparent)',
-          }}
-        />
-        <Side
-          tag="The Contrarian"
-          name="Rory McIlroy"
-          pct="11%"
-          score="67"
-          scoreLabel="(-5)"
-          color="#006B54"
-          tagColor="#d4af37"
-          tagBg="rgba(212,175,55,.12)"
-        />
-      </div>
       <div
         style={{
-          marginTop: 14,
-          padding: '10px 14px',
-          background: '#f0ede5',
-          borderRadius: 6,
-          fontSize: 11,
-          fontStyle: 'italic',
-          color: '#8b7d6b',
-          textAlign: 'center',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          alignItems: 'center',
+          columnGap: 20,
         }}
       >
-        The field&rsquo;s most popular pick cost teams 9 strokes against the sleeper.
+        <div>
+          <div
+            style={{
+              fontFamily: bask,
+              fontWeight: 700,
+              fontSize: 22,
+              color: '#1a2e1a',
+              lineHeight: 1.1,
+            }}
+          >
+            DeChambeau (42%)
+          </div>
+          <div
+            style={{
+              fontFamily: bask,
+              fontWeight: 700,
+              fontSize: 18,
+              color: '#c0392b',
+              marginTop: 8,
+            }}
+          >
+            76 (+4)
+          </div>
+        </div>
+        <div
+          style={{
+            fontFamily: bask,
+            fontStyle: 'italic',
+            fontSize: 15,
+            color: '#8b7d6b',
+          }}
+        >
+          vs
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div
+            style={{
+              fontFamily: bask,
+              fontWeight: 700,
+              fontSize: 22,
+              color: '#1a2e1a',
+              lineHeight: 1.1,
+            }}
+          >
+            McIlroy (11%)
+          </div>
+          <div
+            style={{
+              fontFamily: bask,
+              fontWeight: 700,
+              fontSize: 18,
+              color: '#006B54',
+              marginTop: 8,
+            }}
+          >
+            67 (-5)
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -396,8 +327,8 @@ export default function Day1Recap() {
   return (
     <div
       style={{
-        background: '#f7f4ef',
-        padding: '20px 0 32px',
+        background: '#e8e2d4',
+        padding: '28px 16px 40px',
         fontFamily: sans,
         color: '#1a2e1a',
       }}
@@ -405,78 +336,33 @@ export default function Day1Recap() {
       <div
         id="day1-recap-card"
         style={{
-          maxWidth: 680,
+          maxWidth: 720,
           margin: '0 auto',
           background: '#f7f4ef',
-          border: '1px solid #e0dbd2',
-          borderRadius: 14,
+          borderRadius: 18,
           overflow: 'hidden',
-          boxShadow: '0 8px 28px rgba(0,0,0,.08)',
+          boxShadow: '0 12px 40px rgba(0,0,0,.12)',
+          border: '1px solid #e0dbd2',
         }}
       >
         {/* Header */}
         <div
           style={{
             background: '#006B54',
-            padding: '22px 24px 20px',
-            color: '#fff',
+            padding: '56px 24px 44px',
             textAlign: 'center',
-            position: 'relative',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 12,
-              marginBottom: 10,
-            }}
-          >
-            <div
-              style={{
-                height: 1,
-                width: 40,
-                background: 'linear-gradient(90deg, transparent, #d4af37)',
-              }}
-            />
-            <div
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                border: '1.5px solid #d4af37',
-              }}
-            />
-            <div
-              style={{
-                height: 1,
-                width: 40,
-                background: 'linear-gradient(270deg, transparent, #d4af37)',
-              }}
-            />
-          </div>
-          <div
-            style={{
-              fontSize: 9,
-              letterSpacing: 3,
-              textTransform: 'uppercase',
-              color: 'rgba(255,255,255,.6)',
-              fontWeight: 600,
-              marginBottom: 6,
-            }}
-          >
-            Mendoza&rsquo;s Masters Pool
-          </div>
           <h1
             style={{
               fontFamily: bask,
               fontStyle: 'italic',
               fontWeight: 400,
-              fontSize: 32,
-              margin: '0 0 4px',
               color: '#fff',
-              lineHeight: 1.1,
+              fontSize: 64,
+              margin: 0,
+              lineHeight: 1,
+              letterSpacing: -0.5,
             }}
           >
             Day 1 Recap
@@ -485,177 +371,162 @@ export default function Day1Recap() {
             style={{
               fontFamily: bask,
               fontStyle: 'italic',
-              fontSize: 13,
-              color: '#d4af37',
-              opacity: 0.9,
+              fontSize: 18,
+              color: 'rgba(255,255,255,.72)',
+              marginTop: 14,
             }}
           >
-            Round 1 · Thursday
+            Mendoza&rsquo;s Masters Pool &mdash; Round 1
           </div>
         </div>
 
         {/* Body */}
-        <div style={{ padding: '22px 20px 20px' }}>
-          {/* Section: Top 5 */}
+        <div style={{ padding: '40px 30px 34px' }}>
+          {/* Section: Pool Standings */}
           <div
             style={{
-              fontSize: 10,
-              letterSpacing: 2.5,
+              fontSize: 12,
+              letterSpacing: 3,
               textTransform: 'uppercase',
-              color: '#006B54',
               fontWeight: 700,
+              color: '#006B54',
               textAlign: 'center',
-              marginBottom: 4,
+              marginBottom: 24,
             }}
           >
             Pool Standings After R1
           </div>
-          <div
-            style={{
-              fontFamily: bask,
-              fontStyle: 'italic',
-              fontSize: 13,
-              color: '#8b7d6b',
-              textAlign: 'center',
-              marginBottom: 16,
-            }}
-          >
-            The Top Five
-          </div>
+
           <div>
             {TOP_5.map((entry, i) => (
               <StandingRow key={i} entry={entry} />
             ))}
           </div>
 
-          {/* Decorative divider */}
+          {/* Section divider: Day 1 Highlights */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: 12,
-              margin: '24px 0 18px',
+              gap: 16,
+              margin: '38px 0 24px',
             }}
           >
             <div
               style={{
-                height: 1,
                 flex: 1,
-                background: 'linear-gradient(90deg, transparent, #d4af37, transparent)',
+                height: 1,
+                background: 'linear-gradient(90deg, transparent, #c5b683)',
               }}
             />
             <div
               style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: '#d4af37',
+                fontSize: 12,
+                letterSpacing: 3,
+                textTransform: 'uppercase',
+                fontWeight: 700,
+                color: '#006B54',
+                whiteSpace: 'nowrap',
               }}
-            />
+            >
+              Day 1 Highlights
+            </div>
             <div
               style={{
-                height: 1,
                 flex: 1,
-                background: 'linear-gradient(90deg, transparent, #d4af37, transparent)',
+                height: 1,
+                background: 'linear-gradient(270deg, transparent, #c5b683)',
               }}
             />
           </div>
 
-          {/* Section: Highlights */}
-          <div
-            style={{
-              fontSize: 10,
-              letterSpacing: 2.5,
-              textTransform: 'uppercase',
-              color: '#006B54',
-              fontWeight: 700,
-              textAlign: 'center',
-              marginBottom: 4,
-            }}
-          >
-            Day 1 Highlights
-          </div>
-          <div
-            style={{
-              fontFamily: bask,
-              fontStyle: 'italic',
-              fontSize: 13,
-              color: '#8b7d6b',
-              textAlign: 'center',
-              marginBottom: 16,
-            }}
-          >
-            Heroes and villains of Round 1
-          </div>
+          {/* 2x2 Highlight grid */}
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-              gap: 10,
-              marginBottom: 18,
+              gap: 14,
+              marginBottom: 14,
             }}
           >
-            {HIGHLIGHTS.map((h, i) => (
-              <HighlightCard key={i} item={h} />
-            ))}
+            <HighlightCard
+              label="Best Golfer for the Pool"
+              name="Sam Burns"
+              detail="67 (-5) — picked by 29 teams"
+              detailColor="#006B54"
+            />
+            <HighlightCard
+              label="Worst Golfer for the Pool"
+              name="Bryson DeChambeau"
+              detail="76 (+4) — hurt 126 teams"
+              detailColor="#c0392b"
+            />
+            <HighlightCard
+              label="Biggest Sleeper"
+              name="Rory McIlroy"
+              detail="67 (-5) — only picked by 34"
+              detailColor="#006B54"
+            />
+            <HighlightCard
+              label="Most Unique Team in Top 10"
+              name="Cecil Gant (T9)"
+              detail="Low overlap with field"
+              detailColor="#8b7d6b"
+            />
           </div>
 
           {/* Chalk vs Contrarian */}
-          <ChalkContrarianCard />
+          <ChalkVsContrarian />
         </div>
 
         {/* Footer */}
-        <div
-          style={{
-            background: '#1a2e1a',
-            color: '#fff',
-            padding: '18px 20px 20px',
-            textAlign: 'center',
-          }}
-        >
+        <div style={{ padding: '0 30px 36px' }}>
           <div
             style={{
-              fontFamily: bask,
-              fontStyle: 'italic',
-              fontSize: 13,
-              color: '#d4af37',
-              marginBottom: 8,
+              borderTop: '1px solid #e0dbd2',
+              paddingTop: 24,
+              textAlign: 'center',
             }}
           >
-            &ldquo;A Tradition Unlike Any Other&rdquo;
-          </div>
-          <div
-            style={{
-              fontSize: 10,
-              letterSpacing: 2.5,
-              textTransform: 'uppercase',
-              color: 'rgba(255,255,255,.7)',
-              fontWeight: 600,
-              marginBottom: 10,
-            }}
-          >
-            mendozas-masters-pool.vercel.app
-          </div>
-          <div
-            style={{
-              fontSize: 10,
-              color: 'rgba(255,255,255,.45)',
-              fontWeight: 500,
-              letterSpacing: 0.3,
-            }}
-          >
-            592 visits · 267 unique visitors · Day 1
+            <div
+              style={{
+                fontStyle: 'italic',
+                color: '#8b7d6b',
+                fontSize: 15,
+                marginBottom: 18,
+                fontFamily: bask,
+              }}
+            >
+              Track live standings, scorecards, and picks
+            </div>
+            <a
+              href="https://mendozas-masters-pool.vercel.app"
+              style={{
+                display: 'block',
+                background: '#006B54',
+                color: '#fff',
+                fontWeight: 700,
+                padding: '18px 24px',
+                borderRadius: 12,
+                textDecoration: 'none',
+                fontSize: 15,
+                letterSpacing: 0.3,
+                textAlign: 'center',
+                boxShadow: '0 4px 14px rgba(0,107,84,.25)',
+              }}
+            >
+              mendozas-masters-pool.vercel.app
+            </a>
           </div>
         </div>
       </div>
 
       <div
         style={{
-          maxWidth: 680,
-          margin: '14px auto 0',
+          maxWidth: 720,
+          margin: '16px auto 0',
           textAlign: 'center',
-          fontSize: 11,
+          fontSize: 12,
           color: '#8b7d6b',
           fontStyle: 'italic',
         }}
