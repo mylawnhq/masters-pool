@@ -598,6 +598,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
             padding: '12px 0', fontSize: 9, letterSpacing: 2.5,
             textTransform: 'uppercase', color: '#8b7d6b', fontWeight: 700,
             borderBottom: '1px solid #e0dbd2', marginTop: 14,
+            position: 'relative',
           }}>
             <div />
             {(liveMode || hasEarnings) && <div>Pos</div>}
@@ -608,6 +609,38 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
             {!liveMode && hasEarnings && <div style={{ textAlign: 'right' }}>Earnings</div>}
             {!liveMode && hasEarnings && <div style={{ textAlign: 'right' }}>Score</div>}
             <div />
+
+            {/* Projected cut badge — desktop only, centered over the column header */}
+            {cutLine != null && (
+              <div
+                className="desktop-only"
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  pointerEvents: 'none',
+                }}
+              >
+                <div style={{ width: 28, borderTop: '1.5px dashed #c0392b' }} />
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: '#c0392b',
+                    letterSpacing: 1,
+                    whiteSpace: 'nowrap',
+                    textTransform: 'none',
+                  }}
+                >
+                  Projected Cut {cutLine > 0 ? `+${cutLine}` : cutLine === 0 ? 'E' : `${cutLine}`}
+                </span>
+                <div style={{ width: 28, borderTop: '1.5px dashed #c0392b' }} />
+              </div>
+            )}
           </div>
 
           {/* Live scoring disclaimer — only while in live score-to-par mode */}
