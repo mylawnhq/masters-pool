@@ -929,11 +929,14 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                             }} />
                             {cardBadge && (
                               <div style={{
-                                position: 'absolute', top: 5, right: 5,
-                                fontSize: 6, fontWeight: 700, letterSpacing: 0.6,
+                                position: 'absolute', top: 6, right: 6,
+                                fontSize: 5, fontWeight: 700, letterSpacing: 0.5,
                                 textTransform: 'uppercase', color: '#fff',
-                                background: badgeBg, padding: '2px 5px',
-                                borderRadius: 3, lineHeight: 1,
+                                background: badgeBg, padding: '2px 4px',
+                                borderRadius: 2, lineHeight: 1,
+                                maxWidth: 'calc(100% - 70px)',
+                                overflow: 'hidden', textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
                               }}>
                                 {cardBadge}
                               </div>
