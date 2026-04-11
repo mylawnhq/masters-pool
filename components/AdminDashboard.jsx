@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import Day1Recap from './Day1Recap';
 import Day2Recap from './Day2Recap';
 import HistoricalView from './HistoricalView';
+import EarningsPreview from './EarningsPreview';
 
 const bask = "'Libre Baskerville', Georgia, serif";
 const sans = "'Source Sans 3', 'Helvetica Neue', sans-serif";
@@ -136,6 +137,7 @@ function AdminShell() {
     { id: 'recap',      label: 'Day 1 Recap' },
     ...(adminRound >= 2 ? [{ id: 'recap2', label: 'Day 2 Recap' }] : []),
     { id: 'historical', label: 'Historical' },
+    { id: 'earnings',   label: '2026 Earnings' },
   ];
 
   return (
@@ -203,6 +205,7 @@ function AdminShell() {
       {tab === 'recap' && <Day1Recap />}
       {tab === 'recap2' && <Day2Recap />}
       {tab === 'historical' && <HistoricalView />}
+      {tab === 'earnings' && <EarningsPreview />}
     </div>
   );
 }
