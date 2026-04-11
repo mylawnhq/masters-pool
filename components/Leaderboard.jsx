@@ -735,7 +735,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
               />
               <span className="desktop-only" style={{ fontSize: 11 }}>
                 {earningsMode
-                  ? 'Rankings based on estimated combined tournament earnings · MC golfers contribute $0'
+                  ? 'Final results pending review at Butler Cabin · MC golfers contribute $0'
                   : 'Current rankings based on aggregate team score · Final results determined by combined tournament earnings'}
               </span>
               <span className="mobile-only" style={{ fontSize: 9 }}>
