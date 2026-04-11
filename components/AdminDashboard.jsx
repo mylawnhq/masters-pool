@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import Day1Recap from './Day1Recap';
+import Day2Recap from './Day2Recap';
 import HistoricalView from './HistoricalView';
 
 const bask = "'Libre Baskerville', Georgia, serif";
@@ -121,6 +122,7 @@ function AdminShell() {
   const tabs = [
     { id: 'analytics',  label: 'Analytics' },
     { id: 'recap',      label: 'Day 1 Recap' },
+    { id: 'recap2',     label: 'Day 2 Recap' },
     { id: 'historical', label: 'Historical' },
   ];
 
@@ -187,6 +189,7 @@ function AdminShell() {
       {/* Tab body */}
       {tab === 'analytics' && <AnalyticsView />}
       {tab === 'recap' && <Day1Recap />}
+      {tab === 'recap2' && <Day2Recap />}
       {tab === 'historical' && <HistoricalView />}
     </div>
   );
