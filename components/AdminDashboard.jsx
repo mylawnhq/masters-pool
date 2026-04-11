@@ -118,11 +118,23 @@ export default function AdminDashboard() {
 
 function AdminShell() {
   const [tab, setTab] = useState('analytics');
+  const [adminRound, setAdminRound] = useState(1);
+
+  // Fetch the current round so we can gate recap tabs.
+  useEffect(() => {
+    supabase
+      .from('golfer_leaderboard')
+      .select('current_round')
+      .limit(1)
+      .then(({ data }) => {
+        if (data?.[0]?.current_round) setAdminRound(data[0].current_round);
+      });
+  }, []);
 
   const tabs = [
     { id: 'analytics',  label: 'Analytics' },
     { id: 'recap',      label: 'Day 1 Recap' },
-    { id: 'recap2',     label: 'Day 2 Recap' },
+    ...(adminRound >= 2 ? [{ id: 'recap2', label: 'Day 2 Recap' }] : []),
     { id: 'historical', label: 'Historical' },
   ];
 

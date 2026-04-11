@@ -361,8 +361,9 @@ function fmtCut(n) {
   return n > 0 ? `+${n}` : `${n}`;
 }
 
-export default function MastersLeaderboardOverlay({ open, onClose, golferStats, cutLine, currentRound, hotRoundNames }) {
-  const showCut = (currentRound ?? 0) >= 2 && cutLine != null;
+export default function MastersLeaderboardOverlay({ open, onClose, golferStats, cutLine, currentRound, hotRoundNames, showBubble: showBubbleProp, cutLabel: cutLabelProp, showCutFeatures: showCutFeaturesProp }) {
+  const showCut = showCutFeaturesProp ?? ((currentRound ?? 0) >= 2 && cutLine != null);
+  const cutLabelText = cutLabelProp || (showCut ? 'Cut' : 'Projected Cut');
   const [expanded, setExpanded] = useState(null);
   const [favorites, setFavorites] = useState([]);
   const [favoritesHydrated, setFavoritesHydrated] = useState(false);
@@ -654,7 +655,7 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats, 
                 posNum > 0 &&
                 posNum <= 3;
               // Cut-line derived states (only active during R2+).
-              const isBubble = false; // Bubble state removed after cut finalized
+              const isBubble = showBubbleProp && !isOut && g.score_to_par != null && g.score_to_par === cutLine;
               const isBelowCut = showCut && !isOut && g.score_to_par != null && g.score_to_par > cutLine;
 
               const posLabel = isOfficialCut
@@ -677,7 +678,7 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats, 
               const isFav = favoritesSet.has(g.name);
 
               // Left border color: gold for bubble or top 3, else transparent
-              const leftBorder = isTop3 ? '#d4af37' : 'transparent';
+              const leftBorder = isBubble ? '#d4af37' : isTop3 ? '#d4af37' : 'transparent';
 
               return (
                 <div key={`${section}-${g.name}`}>
@@ -702,6 +703,7 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats, 
                       borderBottom: '1px solid #f0ede5',
                       background: isExpanded
                         ? '#f7f4ef'
+                        : isBubble ? '#fdfcf6'
                         : i % 2 === 0 ? '#fff' : '#faf8f4',
                       opacity: isOut || isBelowCut ? 0.4 : 1,
                       cursor: 'pointer',
@@ -779,6 +781,23 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats, 
                         </span>
                         {hotRoundNames?.has(g.name) && (
                           <span style={{ flexShrink: 0, fontSize: 13, lineHeight: 1 }} title="Hot round">🔥</span>
+                        )}
+                        {isBubble && (
+                          <span
+                            style={{
+                              fontSize: 7,
+                              fontWeight: 700,
+                              letterSpacing: 0.8,
+                              textTransform: 'uppercase',
+                              background: '#d4af37',
+                              color: '#fff',
+                              padding: '2px 5px',
+                              borderRadius: 3,
+                              flexShrink: 0,
+                            }}
+                          >
+                            Bubble
+                          </span>
                         )}
                       </div>
                       {!isOut && !isBelowCut && (
@@ -917,7 +936,7 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats, 
                               whiteSpace: 'nowrap',
                             }}
                           >
-                            Cut {fmtCut(cutLine)}
+                            {cutLabelText} {fmtCut(cutLine)}
                           </span>
                           <div
                             style={{
