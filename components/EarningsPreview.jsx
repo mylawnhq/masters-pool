@@ -63,7 +63,7 @@ function EarningsRow({ entry, rank, expanded, onToggle }) {
             <span style={{ width: 44, fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: MT, textAlign: 'center' }}>Score</span>
             <span style={{ width: 90, fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: MT, textAlign: 'right' }}>Earnings</span>
           </div>
-          {entry.breakdown.map(g => {
+          {[...entry.breakdown].sort((a, b) => b.earnings - a.earnings).map(g => {
             const isMC = g.status === 'cut' || g.status === 'withdrawn';
             return (
               <div key={g.golfer} style={{
