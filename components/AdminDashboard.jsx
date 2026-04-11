@@ -143,13 +143,13 @@ function AdminShell() {
   return (
     <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: sans, color: '#1a2e1a' }}>
       {/* Header bar */}
-      <div style={{ background: '#006B54', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>
+      <div style={{ background: '#006B54', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', fontWeight: 600, whiteSpace: 'nowrap' }}>
           Mendoza&apos;s Masters Pool • Admin
         </div>
         <a href="/" style={{
           fontSize: 10, letterSpacing: 2, textTransform: 'uppercase',
-          color: '#d4af37', fontWeight: 600, textDecoration: 'none',
+          color: '#d4af37', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0,
         }}>
           ← Back to Leaderboard
         </a>
@@ -159,16 +159,23 @@ function AdminShell() {
       <div style={{
         background: '#fff',
         borderBottom: '1px solid #e0dbd2',
-        display: 'flex',
-        justifyContent: 'center',
-        gap: 0,
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
       }}>
-        <div style={{
+        <style>{`.admin-tab-strip::-webkit-scrollbar { display: none; }`}</style>
+        <div className="admin-tab-strip" style={{
           display: 'flex',
           gap: 4,
           maxWidth: 1000,
           width: '100%',
+          margin: '0 auto',
           padding: '0 16px',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
         }}>
           {tabs.map(t => {
             const active = tab === t.id;
@@ -191,6 +198,8 @@ function AdminShell() {
                   borderBottom: active ? '2px solid #006B54' : '2px solid transparent',
                   marginBottom: -1,
                   transition: 'color 150ms ease',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                 }}
               >
                 {t.label}
