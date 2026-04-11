@@ -161,7 +161,7 @@ async function fetchFromESPN() {
 
   const currentRound = detectCurrentRound(competition);
 
-  // ESPN publishes the live projected cut score at tournament level.
+  // ESPN publishes the cut score at tournament level.
   // It's an integer representing score-to-par (e.g. 3 means +3).
   const cutScore =
     typeof event?.tournament?.cutScore === 'number'

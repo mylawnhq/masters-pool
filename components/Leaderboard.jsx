@@ -444,7 +444,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
             </div>
           </div>
 
-          {/* Row 3: small tiles (1st/2nd/3rd + optional projected cut) */}
+          {/* Row 3: small tiles (1st/2nd/3rd + optional cut) */}
           <div style={{ display: 'grid', gridTemplateColumns: cutLine != null ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 6, marginTop: 8 }}>
             {[
               { amt: Math.round(poolPurse * 0.6), label: '1st', color: '#d4af37' },
@@ -657,7 +657,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                     textTransform: 'none',
                   }}
                 >
-                  Projected Cut {cutLine > 0 ? `+${cutLine}` : cutLine === 0 ? 'E' : `${cutLine}`}
+                  Cut {cutLine > 0 ? `+${cutLine}` : cutLine === 0 ? 'E' : `${cutLine}`}
                 </span>
                 <div style={{ width: 28, borderTop: '1.5px dashed #c0392b' }} />
               </div>
@@ -867,7 +867,6 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                               .map(({ p, stat }, gi) => {
                                 const isCut = stat?.status === 'cut' || stat?.status === 'withdrawn';
                                 const score = stat?.score_to_par;
-                                const gBubble = showCutFeatures && !isCut && score != null && score === cutLine;
                                 const gBelowCut = showCutFeatures && !isCut && score != null && score > cutLine;
                                 return (
                                   <div key={gi} style={{
@@ -887,11 +886,6 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                                       <span>{p.golfer}</span>
                                       {hotRoundNames.has(p.golfer) && (
                                         <span style={{ flexShrink: 0, fontSize: 11, lineHeight: 1 }} title="Hot round">🔥</span>
-                                      )}
-                                      {gBubble && (
-                                        <span style={{ fontSize: 7, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', background: '#d4af37', color: '#fff', padding: '1px 4px', borderRadius: 2, flexShrink: 0 }}>
-                                          Bubble
-                                        </span>
                                       )}
                                       {gBelowCut && (
                                         <span style={{ fontSize: 7, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', background: '#c0392b', color: '#fff', padding: '1px 4px', borderRadius: 2, flexShrink: 0 }}>
@@ -951,15 +945,12 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                         const pe = hasEarnings ? (earnings[p.golfer] || 0) : null;
                         const stat = liveMode ? golferStats[p.golfer] : null;
                         const isCut = stat && (stat.status === 'cut' || stat.status === 'withdrawn');
-                        const gBubble = showCutFeatures && stat && !isCut && stat.score_to_par != null && stat.score_to_par === cutLine;
                         const gBelowCut = showCutFeatures && stat && !isCut && stat.score_to_par != null && stat.score_to_par > cutLine;
                         const spaceIdx = p.golfer.indexOf(' ');
                         const firstName = spaceIdx === -1 ? p.golfer : p.golfer.slice(0, spaceIdx);
                         const lastName = spaceIdx === -1 ? '' : p.golfer.slice(spaceIdx + 1);
                         const count = pickCounts[p.golfer] || 0;
-                        const barColor = gBubble
-                          ? '#d4af37'
-                          : gBelowCut
+                        const barColor = gBelowCut
                             ? '#c0392b'
                             : liveMode
                               ? cardBarColor(stat)
@@ -968,13 +959,13 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                                 : pe >= 4e5 ? '#2a9d6e'
                                 : pe >= 1e5 ? '#8bb89e'
                                 : '#d9d3c7';
-                        const cardBadge = isCut ? 'MC' : gBubble ? 'BUBBLE' : gBelowCut ? 'BELOW CUT' : null;
-                        const badgeBg = isCut ? '#c0392b' : gBubble ? '#d4af37' : '#c0392b';
+                        const cardBadge = isCut ? 'MC' : gBelowCut ? 'BELOW CUT' : null;
+                        const badgeBg = '#c0392b';
                         return (
                           <div key={i} className="pick-card" style={{
-                            background: gBubble ? '#fdfcf6' : '#fff',
+                            background: '#fff',
                             borderRadius: 8,
-                            border: `1px solid ${gBubble ? '#e8dcc0' : '#e0dbd2'}`,
+                            border: '1px solid #e0dbd2',
                             padding: '14px 14px 12px',
                             boxShadow: '0 1px 4px rgba(0,0,0,.04)',
                             position: 'relative', overflow: cardBadge ? 'visible' : 'hidden', minWidth: 0,
@@ -1005,7 +996,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                                 {cardBadge}
                               </div>
                             )}
-                            <div className="pick-group" style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: gBubble ? '#d4af37' : '#006B54', fontWeight: 700, marginBottom: 6 }}>
+                            <div className="pick-group" style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: '#006B54', fontWeight: 700, marginBottom: 6 }}>
                               {p.group}
                             </div>
                             <div className="pick-name" style={{ color: '#1a2e1a', marginBottom: 4, lineHeight: 1.2 }}>
