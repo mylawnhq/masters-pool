@@ -171,9 +171,12 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
     ? Object.keys(computedEarnings).length > 0
     : Object.keys(earnings).length > 0;
   const hasLiveScores = Object.keys(golferStats).length > 0;
-  // Live aggregate-score mode: T–Sat, ranking by sum of golfer score_to_par.
-  // When EARNINGS_MODE is on, we skip liveMode and show earnings instead.
-  const liveMode = EARNINGS_MODE ? false : (scoresLive && hasLiveScores);
+  // Live aggregate-score mode: drives ticker, overlay, pick-card positions,
+  // mini golfer leaderboard — all stay on regardless of earnings mode.
+  const liveMode = scoresLive && hasLiveScores;
+  // Earnings mode: only affects ranking order, score display, and column headers.
+  // Everything else (ticker, overlay, cut features, etc.) stays driven by liveMode.
+  const earningsMode = EARNINGS_MODE && liveMode;
 
   // Single source of truth for every time-dependent UI decision.
   // See lib/tournamentState.js for the full derivation logic.
@@ -283,10 +286,11 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
         { group: 'Group 3', golfer: e.group3b },
         { group: 'Group 4', golfer: e.group4 },
       ];
-      const total = hasEarnings
+      const total = (earningsMode || hasEarnings)
         ? picks.reduce((s, p) => s + (effectiveEarnings[p.golfer] || 0), 0)
         : null;
-      // Aggregate team score-to-par. Cut/withdrawn golfers contribute 0.
+      // Aggregate team score-to-par — always computed when liveMode is on,
+      // even in earningsMode (needed for mini golfer leaderboard, pick cards).
       let aggregate = null;
       if (liveMode) {
         aggregate = picks.reduce((s, p) => {
@@ -299,7 +303,18 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
       return { ...e, picks, total, aggregate };
     });
 
-    if (liveMode) {
+    if (earningsMode) {
+      // Earnings mode: sort by total earnings descending, tied entries share rank.
+      list.sort((a, b) => b.total - a.total);
+      let r = 1;
+      list.forEach((e, i) => {
+        e.rank = (i > 0 && e.total === list[i - 1].total) ? list[i - 1].rank : r;
+        r = i + 2;
+      });
+      const rankCounts = {};
+      list.forEach(e => { rankCounts[e.rank] = (rankCounts[e.rank] || 0) + 1; });
+      list.forEach(e => { e.posLabel = (rankCounts[e.rank] > 1 ? 'T' : '') + e.rank; });
+    } else if (liveMode) {
       // Lower aggregate = better. Tied entries share a rank ("T2"); the
       // displayed tiebreakers (low am, winning score) are resolved by humans
       // until the tournament concludes.
@@ -322,7 +337,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
       list.sort((a, b) => a.name.localeCompare(b.name));
     }
     return list;
-  }, [entries, effectiveEarnings, hasEarnings, golferStats, liveMode]);
+  }, [entries, effectiveEarnings, hasEarnings, earningsMode, golferStats, liveMode]);
 
   // Filter by search
   const filtered = useMemo(() => {
@@ -421,7 +436,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                 </span>
               )}
               <span style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#d4af37', fontWeight: 600 }}>
-                {liveMode && !hasEarnings ? '● Live Scoring' : '✦ Results Posted'}
+                {earningsMode ? '✦ Earnings Mode' : liveMode && !hasEarnings ? '● Live Scoring' : '✦ Results Posted'}
               </span>
             </div>
           )}
@@ -653,7 +668,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
             <div style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {liveMode ? 'Name' : hasEarnings ? 'Name' : 'Name (A–Z)'}
             </div>
-            {liveMode && <div style={{ textAlign: 'right' }}>Team Score</div>}
+            {liveMode && <div style={{ textAlign: 'right' }}>{earningsMode ? 'Earnings' : 'Team Score'}</div>}
             {!liveMode && hasEarnings && <div style={{ textAlign: 'right' }}>Earnings</div>}
             {!liveMode && hasEarnings && <div style={{ textAlign: 'right' }}>Score</div>}
             <div />
@@ -719,10 +734,14 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                 }}
               />
               <span className="desktop-only" style={{ fontSize: 11 }}>
-                Current rankings based on aggregate team score · Final results determined by combined tournament earnings
+                {earningsMode
+                  ? 'Rankings based on estimated combined tournament earnings · MC golfers contribute $0'
+                  : 'Current rankings based on aggregate team score · Final results determined by combined tournament earnings'}
               </span>
               <span className="mobile-only" style={{ fontSize: 9 }}>
-                Current rankings by team score · Final results by tournament earnings
+                {earningsMode
+                  ? 'Rankings by estimated tournament earnings · MC = $0'
+                  : 'Current rankings by team score · Final results by tournament earnings'}
               </span>
             </div>
           )}
@@ -805,10 +824,10 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                   </div>
                   {liveMode && (
                     <div style={{
-                      textAlign: 'right', fontSize: 16, fontWeight: 700, fontFamily: bask,
-                      color: parColor(entry.aggregate),
+                      textAlign: 'right', fontSize: earningsMode ? 15 : 16, fontWeight: 700, fontFamily: bask,
+                      color: earningsMode ? (entry.rank <= 3 ? '#006B54' : '#1a2e1a') : parColor(entry.aggregate),
                     }}>
-                      {fmtPar(entry.aggregate)}
+                      {earningsMode ? fmt(entry.total) : fmtPar(entry.aggregate)}
                     </div>
                   )}
                   {!liveMode && hasEarnings && (
@@ -843,11 +862,11 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                           marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid #e0dbd2',
                         }}>
                           <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: '#8b7d6b', fontWeight: 700 }}>Aggregate Team Score</div>
+                            <div style={{ fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: '#8b7d6b', fontWeight: 700 }}>{earningsMode ? 'Combined Earnings' : 'Aggregate Team Score'}</div>
                             <div style={{
-                              fontSize: 36, fontWeight: 700, fontFamily: bask,
-                              color: parColor(entry.aggregate), marginTop: 2, lineHeight: 1.05,
-                            }}>{fmtPar(entry.aggregate)}</div>
+                              fontSize: earningsMode ? 26 : 36, fontWeight: 700, fontFamily: bask,
+                              color: earningsMode ? '#006B54' : parColor(entry.aggregate), marginTop: 2, lineHeight: 1.05,
+                            }}>{earningsMode ? fmtFull(entry.total) : fmtPar(entry.aggregate)}</div>
                           </div>
                           <div style={{
                             width: 52, height: 52, borderRadius: '50%',
@@ -975,7 +994,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                     {/* Pick grid (3 cols → 2 cols ≤640 → 1 col ≤400) */}
                     <div className="picks-grid">
                       {entry.picks.map((p, i) => {
-                        const pe = hasEarnings ? (effectiveEarnings[p.golfer] || 0) : null;
+                        const pe = (earningsMode || hasEarnings) ? (effectiveEarnings[p.golfer] || 0) : null;
                         const stat = liveMode ? golferStats[p.golfer] : null;
                         const isCut = stat && (stat.status === 'cut' || stat.status === 'withdrawn');
                         const gBubble = showBubble && stat && !isCut && stat.score_to_par != null && stat.score_to_par === cutLine;
@@ -989,7 +1008,9 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                           : gBelowCut
                             ? '#c0392b'
                             : liveMode
-                              ? cardBarColor(stat)
+                              ? (earningsMode
+                                  ? (isCut ? '#c0392b' : pe >= 1e6 ? '#006B54' : pe >= 4e5 ? '#2a9d6e' : pe >= 1e5 ? '#8bb89e' : '#d9d3c7')
+                                  : cardBarColor(stat))
                               : !hasEarnings ? '#006B54'
                                 : pe >= 1e6 ? '#006B54'
                                 : pe >= 4e5 ? '#2a9d6e'
@@ -1053,12 +1074,21 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                                 }}>
                                   {isCut ? 'MC' : (stat?.position || '—')}
                                 </span>
-                                <span style={{
-                                  fontSize: 14, fontWeight: 700, fontFamily: bask,
-                                  color: isCut ? '#c0392b' : parColor(stat?.score_to_par),
-                                }}>
-                                  {isCut ? 'MC' : fmtPar(stat?.score_to_par)}
-                                </span>
+                                {earningsMode ? (
+                                  <span style={{
+                                    fontSize: 14, fontWeight: 700, fontFamily: bask,
+                                    color: isCut ? '#c0392b' : (pe >= 5e5 ? '#006B54' : '#1a2e1a'),
+                                  }}>
+                                    {isCut ? '$0' : (pe > 0 ? fmt(pe) : '$0')}
+                                  </span>
+                                ) : (
+                                  <span style={{
+                                    fontSize: 14, fontWeight: 700, fontFamily: bask,
+                                    color: isCut ? '#c0392b' : parColor(stat?.score_to_par),
+                                  }}>
+                                    {isCut ? 'MC' : fmtPar(stat?.score_to_par)}
+                                  </span>
+                                )}
                               </div>
                             )}
                             {!liveMode && hasEarnings && (
