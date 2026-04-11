@@ -913,8 +913,8 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                               .map(({ p, stat }, gi) => {
                                 const isCut = stat?.status === 'cut' || stat?.status === 'withdrawn';
                                 const score = stat?.score_to_par;
-                                const gBubble = showBubble && !isCut && score != null && score === cutLine;
-                                const gBelowCut = showCutFeatures && !isCut && score != null && score > cutLine;
+                                const gBubble = !earningsMode && showBubble && !isCut && score != null && score === cutLine;
+                                const gBelowCut = !earningsMode && showCutFeatures && !isCut && score != null && score > cutLine;
                                 return (
                                   <div key={gi} style={{
                                     display: 'grid',
@@ -997,8 +997,8 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                         const pe = (earningsMode || hasEarnings) ? (effectiveEarnings[p.golfer] || 0) : null;
                         const stat = liveMode ? golferStats[p.golfer] : null;
                         const isCut = stat && (stat.status === 'cut' || stat.status === 'withdrawn');
-                        const gBubble = showBubble && stat && !isCut && stat.score_to_par != null && stat.score_to_par === cutLine;
-                        const gBelowCut = showCutFeatures && stat && !isCut && stat.score_to_par != null && stat.score_to_par > cutLine;
+                        const gBubble = !earningsMode && showBubble && stat && !isCut && stat.score_to_par != null && stat.score_to_par === cutLine;
+                        const gBelowCut = !earningsMode && showCutFeatures && stat && !isCut && stat.score_to_par != null && stat.score_to_par > cutLine;
                         const spaceIdx = p.golfer.indexOf(' ');
                         const firstName = spaceIdx === -1 ? p.golfer : p.golfer.slice(0, spaceIdx);
                         const lastName = spaceIdx === -1 ? '' : p.golfer.slice(spaceIdx + 1);
