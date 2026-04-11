@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MASTERS_PAYOUTS, getPayoutForPosition } from '@/lib/mastersPayout';
+import { PURSE_2026, MASTERS_PAYOUTS, getPayoutForPosition } from '@/lib/mastersPayout';
 
 const bask = "'Libre Baskerville', Georgia, serif";
 const sans = "'Source Sans 3', 'Helvetica Neue', sans-serif";
@@ -212,9 +212,8 @@ export default function EarningsPreview() {
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#7a5c00', marginBottom: 2 }}>Estimated earnings — not official</div>
           <div style={{ fontSize: 12, color: '#9a7a20', lineHeight: 1.5 }}>
-            Based on 2025 payout % distribution with a <strong>$21M purse</strong> (same as 2025).
+            Based on official 2026 payout distribution with a <strong>$22.5M purse</strong>.
             MC golfers contribute $0. Tie positions use current leaderboard — may shift as rounds complete.
-            Augusta will release official 2026 payouts after Sunday&rsquo;s round.
           </div>
         </div>
       </div>
@@ -222,10 +221,10 @@ export default function EarningsPreview() {
       {/* Stat tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
         {[
-          { lbl: 'Assumed Purse', val: '$21M', sub: 'same as 2025' },
+          { lbl: 'Assumed Purse', val: `$${(PURSE_2026 / 1_000_000).toFixed(1)}M`, sub: 'official 2026' },
           { lbl: 'Cut Makers', val: String(cutMakers), sub: 'earning players' },
           { lbl: 'MC = $0', val: String(mcCount), sub: 'contribute nothing' },
-          { lbl: 'Winner Est.', val: '$4.2M', sub: 'same as 2025' },
+          { lbl: 'Winner Est.', val: `$${(MASTERS_PAYOUTS[1] / 1_000_000).toFixed(1)}M`, sub: '1st place' },
         ].map(({ lbl, val, sub }) => (
           <div key={lbl} style={{
             background: '#fff', border: `1px solid ${BD}`, borderRadius: 8,
