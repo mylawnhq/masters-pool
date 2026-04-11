@@ -212,7 +212,7 @@ export default function EarningsPreview() {
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#7a5c00', marginBottom: 2 }}>Estimated earnings — not official</div>
           <div style={{ fontSize: 12, color: '#9a7a20', lineHeight: 1.5 }}>
-            Based on 2025 payout % distribution scaled to an assumed <strong>$22M purse</strong>.
+            Based on 2025 payout % distribution with a <strong>$21M purse</strong> (same as 2025).
             MC golfers contribute $0. Tie positions use current leaderboard — may shift as rounds complete.
             Augusta will release official 2026 payouts after Sunday&rsquo;s round.
           </div>
@@ -222,10 +222,10 @@ export default function EarningsPreview() {
       {/* Stat tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
         {[
-          { lbl: 'Assumed Purse', val: '$22M', sub: '+$1M vs 2025' },
+          { lbl: 'Assumed Purse', val: '$21M', sub: 'same as 2025' },
           { lbl: 'Cut Makers', val: String(cutMakers), sub: 'earning players' },
           { lbl: 'MC = $0', val: String(mcCount), sub: 'contribute nothing' },
-          { lbl: 'Winner Est.', val: '$4.4M', sub: 'was $4.2M in 2025' },
+          { lbl: 'Winner Est.', val: '$4.2M', sub: 'same as 2025' },
         ].map(({ lbl, val, sub }) => (
           <div key={lbl} style={{
             background: '#fff', border: `1px solid ${BD}`, borderRadius: 8,
