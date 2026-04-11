@@ -49,9 +49,6 @@ function EarningsRow({ entry, rank, expanded, onToggle }) {
             {entry.breakdown.map(g => g.golfer.split(' ').slice(-1)[0]).join(' · ')}
           </div>
         </div>
-        {entry.breakdown.some(g => g.status === 'cut') && (
-          <span style={{ fontSize: 10, fontWeight: 700, color: RD, background: '#fde8e8', padding: '2px 6px', borderRadius: 4, letterSpacing: '0.05em' }}>MC</span>
-        )}
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{ fontFamily: bask, fontWeight: 700, fontSize: 16, color: G }}>{fmtM(entry.total)}</div>
           <div style={{ fontSize: 10, color: LM }}>{fmtFull(entry.total)}</div>
