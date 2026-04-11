@@ -1,7 +1,7 @@
 'use client';
 /**
- * Day 2 recap — same RecapCard template as Day 1, just different data.
- * See components/recap-template.md for the props contract.
+ * Day 2 recap — same RecapCard template as Day 1, with 6 highlight tiles
+ * (4 main + 2 extra) instead of 4 + chalk-vs-contrarian.
  */
 import RecapCard from './RecapCard';
 
@@ -47,33 +47,45 @@ const DAY_2 = {
     {
       label: 'Best Golfer for the Pool',
       name: 'Rory McIlroy',
-      detail: '65 (-7) in R2 \u2014 picked by 34 teams',
+      detail: '-7 \u2014 65 in R2 \u2014 picked by 34 teams',
       detailColor: '#006B54',
     },
     {
       label: 'Worst Golfer for the Pool',
       name: 'Scottie Scheffler',
-      detail: '74 (+2) \u2014 hurt 93 teams, dropped to T24',
+      detail: '+2 \u2014 hurt 93 teams \u2014 dropped to T24',
       detailColor: '#c0392b',
     },
     {
-      label: 'Biggest Sleeper',
-      name: 'Rory McIlroy',
-      detail: '-12, leads tournament \u2014 only 34 of 300 picked him',
+      label: 'Comeback Kid (Patron)',
+      name: 'Terry Smith',
+      detail: 'Jumped 174 spots \u2014 280th \u2192 106th',
       detailColor: '#006B54',
     },
     {
-      label: 'Most Unique Team in Top 10',
-      name: 'Art Wilkerson (T8)',
-      detail: 'Only 9% pick overlap with the field',
-      detailColor: '#8b7d6b',
+      label: 'Reverse Comeback (Patron)',
+      name: 'Anthony Favazza',
+      detail: 'Fell 189 spots \u2014 68th \u2192 257th',
+      detailColor: '#c0392b',
     },
   ],
 
-  chalk: {
-    left:  { name: 'Scheffler (31%)', score: '74 (+2)', color: '#c0392b' },
-    right: { name: 'McIlroy (11%)',   score: '65 (-7)', color: '#006B54' },
-  },
+  extraHighlights: [
+    {
+      label: 'Most Birdies (R1+R2)',
+      name: 'Rory McIlroy',
+      detail: '15 birdies through 36 holes \u2014 34 teams picked',
+      detailColor: '#d4af37',
+    },
+    {
+      label: 'All 6 Alive',
+      name: '9 of 300 teams',
+      detail: 'All 6 golfers survived the cut',
+      detailColor: '#006B54',
+    },
+  ],
+
+  // No chalk-vs-contrarian for Day 2 — the 6 highlight tiles replace it.
 };
 
 export default function Day2Recap() {

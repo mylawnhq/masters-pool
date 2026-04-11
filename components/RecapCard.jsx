@@ -578,7 +578,8 @@ export default function RecapCard({ data }) {
             />
           </div>
 
-          {/* 2x2 Highlight grid */}
+          {/* Highlight grid — renders all highlights in rows of 2. Supports
+              4 (Day 1 pattern) or 6 (Day 2 pattern with extraHighlights). */}
           <div
             style={{
               display: 'grid',
@@ -590,10 +591,13 @@ export default function RecapCard({ data }) {
             {data.highlights.map((h, i) => (
               <HighlightCard key={i} {...h} />
             ))}
+            {(data.extraHighlights || []).map((h, i) => (
+              <HighlightCard key={`extra-${i}`} {...h} />
+            ))}
           </div>
 
-          {/* Chalk vs Contrarian */}
-          <ChalkVsContrarian chalk={data.chalk} />
+          {/* Chalk vs Contrarian — optional, only renders when data.chalk is provided */}
+          {data.chalk && <ChalkVsContrarian chalk={data.chalk} />}
         </div>
 
         {/* Footer */}
