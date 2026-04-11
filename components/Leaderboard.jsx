@@ -6,6 +6,9 @@ import TickerBar from './TickerBar';
 import MastersLeaderboardOverlay from './MastersLeaderboardOverlay';
 import { POOL_HISTORY } from '@/lib/poolHistory';
 import { deriveTournamentState } from '@/lib/tournamentState';
+import { getPayoutForPosition } from '@/lib/mastersPayout';
+
+const EARNINGS_MODE = process.env.NEXT_PUBLIC_EARNINGS_MODE === 'true';
 
 const fmt = n => n >= 1e6 ? `$${(n/1e6).toFixed(2)}M` : n >= 1e3 ? `$${(n/1e3).toFixed(0)}K` : `$${n.toLocaleString()}`;
 const fmtFull = n => `$${n.toLocaleString()}`;
@@ -137,11 +140,40 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
   };
   const favSet = useMemo(() => new Set(favorites), [favorites]);
 
-  const hasEarnings = Object.keys(earnings).length > 0;
+  // When EARNINGS_MODE is on, calculate earnings client-side from golfer
+  // positions using the official payout table (same logic as EarningsPreview).
+  const computedEarnings = useMemo(() => {
+    if (!EARNINGS_MODE || !Object.keys(golferStats).length) return {};
+    // Build position → tied count map
+    const positionCounts = {};
+    Object.values(golferStats).forEach(g => {
+      if (g.status === 'cut' || g.status === 'withdrawn') return;
+      const pos = g.position;
+      if (!pos) return;
+      const num = parseInt(String(pos).replace(/[^\d]/g, ''), 10);
+      if (Number.isFinite(num)) positionCounts[num] = (positionCounts[num] || 0) + 1;
+    });
+    // Compute per-golfer earnings
+    const map = {};
+    Object.entries(golferStats).forEach(([name, g]) => {
+      if (g.status === 'cut' || g.status === 'withdrawn') { map[name] = 0; return; }
+      const posStr = g.position;
+      const posNum = posStr ? parseInt(String(posStr).replace(/[^\d]/g, ''), 10) : null;
+      const tied = Number.isFinite(posNum) ? (positionCounts[posNum] || 1) : 1;
+      map[name] = (!Number.isFinite(posNum)) ? 0 : getPayoutForPosition(posNum, tied);
+    });
+    return map;
+  }, [golferStats]);
+
+  // Use computed earnings in EARNINGS_MODE, otherwise fall back to DB earnings
+  const effectiveEarnings = EARNINGS_MODE ? computedEarnings : earnings;
+  const hasEarnings = EARNINGS_MODE
+    ? Object.keys(computedEarnings).length > 0
+    : Object.keys(earnings).length > 0;
   const hasLiveScores = Object.keys(golferStats).length > 0;
   // Live aggregate-score mode: T–Sat, ranking by sum of golfer score_to_par.
-  // Earnings mode is intentionally not surfaced yet — it'll be flipped on Sunday.
-  const liveMode = scoresLive && hasLiveScores;
+  // When EARNINGS_MODE is on, we skip liveMode and show earnings instead.
+  const liveMode = EARNINGS_MODE ? false : (scoresLive && hasLiveScores);
 
   // Single source of truth for every time-dependent UI decision.
   // See lib/tournamentState.js for the full derivation logic.
@@ -252,7 +284,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
         { group: 'Group 4', golfer: e.group4 },
       ];
       const total = hasEarnings
-        ? picks.reduce((s, p) => s + (earnings[p.golfer] || 0), 0)
+        ? picks.reduce((s, p) => s + (effectiveEarnings[p.golfer] || 0), 0)
         : null;
       // Aggregate team score-to-par. Cut/withdrawn golfers contribute 0.
       let aggregate = null;
@@ -290,7 +322,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
       list.sort((a, b) => a.name.localeCompare(b.name));
     }
     return list;
-  }, [entries, earnings, hasEarnings, golferStats, liveMode]);
+  }, [entries, effectiveEarnings, hasEarnings, golferStats, liveMode]);
 
   // Filter by search
   const filtered = useMemo(() => {
@@ -943,7 +975,7 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                     {/* Pick grid (3 cols → 2 cols ≤640 → 1 col ≤400) */}
                     <div className="picks-grid">
                       {entry.picks.map((p, i) => {
-                        const pe = hasEarnings ? (earnings[p.golfer] || 0) : null;
+                        const pe = hasEarnings ? (effectiveEarnings[p.golfer] || 0) : null;
                         const stat = liveMode ? golferStats[p.golfer] : null;
                         const isCut = stat && (stat.status === 'cut' || stat.status === 'withdrawn');
                         const gBubble = showBubble && stat && !isCut && stat.score_to_par != null && stat.score_to_par === cutLine;
