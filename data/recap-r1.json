@@ -1,0 +1,21 @@
+{
+  "day": 1,
+  "subtitle": "Mendoza\u2019s Masters Pool \u2014 Round 1",
+  "top5": [
+    { "rank": "T1", "name": "David Shenosky", "score": -8, "picks": ["Scheffler", "Matsuyama", "Day", "Burns", "Conners", "Campbell"], "highlighted": true },
+    { "rank": "T1", "name": "Justin Dean", "score": -8, "picks": ["Scheffler", "Fleetwood", "Rose", "Lowry", "Burns", "Willett"], "highlighted": true },
+    { "rank": "T3", "name": "Ben Edwards", "score": -6, "picks": ["McIlroy", "\u00c5berg", "Reed", "Conners", "Lowry", "Campbell"] },
+    { "rank": "T3", "name": "Joey Woodman", "score": -6, "picks": ["Scheffler", "\u00c5berg", "Schauffele", "Lowry", "Burns", "Z. Johnson"] },
+    { "rank": "5", "name": "Trenton Edwards", "score": -5, "picks": ["Scheffler", "Rose", "Schauffele", "Spaun", "Griffin", "Campbell"] }
+  ],
+  "highlights": [
+    { "label": "Best Golfer for the Pool", "name": "Sam Burns", "detail": "67 (-5) \u2014 picked by 29 teams", "detailColor": "#006B54" },
+    { "label": "Worst Golfer for the Pool", "name": "Bryson DeChambeau", "detail": "76 (+4) \u2014 hurt 126 teams", "detailColor": "#c0392b" },
+    { "label": "Biggest Sleeper", "name": "Rory McIlroy", "detail": "67 (-5) \u2014 only picked by 34", "detailColor": "#006B54" },
+    { "label": "Most Unique Team in Top 10", "name": "Cecil Gant (T9)", "detail": "Low overlap with field", "detailColor": "#8b7d6b" }
+  ],
+  "chalk": {
+    "left": { "name": "DeChambeau (42%)", "score": "76 (+4)", "color": "#c0392b" },
+    "right": { "name": "McIlroy (11%)", "score": "67 (-5)", "color": "#006B54" }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "day": 2,
+  "subtitle": "Mendoza\u2019s Masters Pool \u2014 Round 2",
+  "top5": [
+    { "rank": "1", "name": "Mason Colling", "score": -27, "picks": ["McIlroy", "Young", "Rose", "Burns", "H\u00f8jgaard", "Cabrera"], "highlighted": true },
+    { "rank": "2", "name": "Jen Moore", "score": -25, "picks": ["McIlroy", "Day", "Matsuyama", "Lowry", "Homa", "Singh"] },
+    { "rank": "3", "name": "Keith Mefford", "score": -24, "picks": ["McIlroy", "Schauffele", "Fleetwood", "Lowry", "Spaun", "Couples"] },
+    { "rank": "T4", "name": "Joe Gillin", "score": -22, "picks": ["McIlroy", "\u00c5berg", "Young", "Burns", "Spaun", "Z. Johnson"] },
+    { "rank": "T4", "name": "Ian Edwards", "score": -22, "picks": ["McIlroy", "Rose", "MacIntyre", "English", "Lowry", "Johnson"] }
+  ],
+  "highlights": [
+    { "label": "Best Golfer for the Pool", "name": "Rory McIlroy", "detail": "-7 \u2014 65 in R2 \u2014 picked by 34 teams", "detailColor": "#006B54" },
+    { "label": "Worst Golfer for the Pool", "name": "Scottie Scheffler", "detail": "+2 \u2014 hurt 93 teams \u2014 dropped to T24", "detailColor": "#c0392b" },
+    { "label": "Comeback Kid (Patron)", "name": "Terry Smith", "detail": "Jumped 174 spots \u2014 280th \u2192 106th", "detailColor": "#006B54" },
+    { "label": "Reverse Comeback (Patron)", "name": "Anthony Favazza", "detail": "Fell 189 spots \u2014 68th \u2192 257th", "detailColor": "#c0392b" }
+  ],
+  "extraHighlights": [
+    { "label": "Most Birdies (R1+R2)", "name": "Rory McIlroy", "detail": "15 birdies through 36 holes \u2014 34 teams picked", "detailColor": "#d4af37" },
+    { "label": "All 6 Alive", "name": "9 of 300 teams", "detail": "All 6 golfers survived the cut", "detailColor": "#006B54" }
+  ]
+}

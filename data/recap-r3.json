@@ -1,0 +1,122 @@
+{
+  "day": 3,
+  "subtitle": "Mendoza’s Masters Pool — Round 3",
+  "top5": [
+    {
+      "rank": "1",
+      "name": "Mason Colling",
+      "score": 9315000,
+      "scoreLabel": "$9.31M",
+      "picks": [
+        "McIlroy",
+        "Young",
+        "Rose",
+        "Burns",
+        "Højgaard",
+        "Cabrera"
+      ],
+      "highlighted": true
+    },
+    {
+      "rank": "2",
+      "name": "Joe Gillin",
+      "score": 8671094,
+      "scoreLabel": "$8.67M",
+      "picks": [
+        "McIlroy",
+        "Åberg",
+        "Young",
+        "Burns",
+        "Spaun",
+        "Johnson"
+      ],
+      "highlighted": false
+    },
+    {
+      "rank": "3",
+      "name": "Cody Briscoe",
+      "score": 7841700,
+      "scoreLabel": "$7.84M",
+      "picks": [
+        "McIlroy",
+        "Rose",
+        "Young",
+        "Woodland",
+        "Watson",
+        "Willett"
+      ],
+      "highlighted": false
+    },
+    {
+      "rank": "4",
+      "name": "Cecil Gant",
+      "score": 7546544,
+      "scoreLabel": "$7.55M",
+      "picks": [
+        "McIlroy",
+        "Fleetwood",
+        "Young",
+        "Woodland",
+        "Homa",
+        "Johnson"
+      ],
+      "highlighted": false
+    },
+    {
+      "rank": "5",
+      "name": "Vincent Gallo",
+      "score": 7352188,
+      "scoreLabel": "$7.35M",
+      "picks": [
+        "McIlroy",
+        "Young",
+        "Fitzpatrick",
+        "Højgaard",
+        "Homa",
+        "Johnson"
+      ],
+      "highlighted": false
+    }
+  ],
+  "highlights": [
+    {
+      "label": "Best Golfer R3",
+      "name": "Scottie Scheffler",
+      "detail": "-7 in R3 — 93 teams picked — at T7",
+      "detailColor": "#006B54"
+    },
+    {
+      "label": "Worst Golfer R3",
+      "name": "Gary Woodland",
+      "detail": "+4 in R3 — hurt 33 teams — at 51",
+      "detailColor": "#c0392b"
+    },
+    {
+      "label": "Comeback Kid (Patron)",
+      "name": "CJ Exford",
+      "detail": "Jumped 176 spots — 266th → 90th",
+      "detailColor": "#006B54"
+    },
+    {
+      "label": "Reverse Comeback (Patron)",
+      "name": "Tyler Wild",
+      "detail": "Fell 159 spots — 86th → 245th",
+      "detailColor": "#c0392b"
+    }
+  ],
+  "standingsTitle": "Estimated Earnings After R3",
+  "extraHighlights": [
+    {
+      "label": "Most Birdies (R1+R2+R3)",
+      "name": "Rory McIlroy",
+      "detail": "19 birdies through 54 holes — 34 teams picked",
+      "detailColor": "#d4af37"
+    },
+    {
+      "label": "3+ Golfers in Top 10",
+      "name": "22 of 300 teams",
+      "detail": "Multiple golfers positioned for a Sunday charge",
+      "detailColor": "#006B54"
+    }
+  ]
+}
