@@ -518,7 +518,8 @@ function Step4({ data, onBack }) {
 
 // ── Deadline check ──────────────────────────────────────────────────────
 
-function DeadlineClosed() {
+function DeadlineClosed({ effectiveDeadline }) {
+  const dl = new Date(effectiveDeadline || deadline);
   return (
     <div style={{ fontFamily: sans, background: CR, minHeight: '100vh' }}>
       <div style={{ background: G, padding: '40px 24px', textAlign: 'center' }}>
@@ -530,7 +531,7 @@ function DeadlineClosed() {
         <div style={{ fontSize: 52, marginBottom: 16 }}>{'\u26F3'}</div>
         <div style={{ fontFamily: bask, fontStyle: 'italic', fontSize: 20, color: DK, marginBottom: 12 }}>The field is set!</div>
         <div style={{ fontSize: 14, color: MT, lineHeight: 1.6, marginBottom: 24 }}>
-          Entry closed on {new Date(deadline).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at {new Date(deadline).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}.
+          Entry closed on {dl.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at {dl.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}.
         </div>
         <a href="/" style={{ display: 'inline-block', padding: '12px 24px', background: G, color: WH, borderRadius: 8, textDecoration: 'none', fontWeight: 700, fontFamily: sans, fontSize: 14 }}>
           View the Leaderboard \u2192
@@ -542,13 +543,16 @@ function DeadlineClosed() {
 
 // ── Main component ──────────────────────────────────────────────────────
 
-export default function EntryFlow() {
+export default function EntryFlow({ deadlineOverride }) {
   const [step, setStep] = useState(0);
   const [data, setData] = useState({});
 
+  // Use override deadline if provided, otherwise use config
+  const effectiveDeadline = deadlineOverride || deadline;
+
   // Deadline enforcement
-  const isPastDeadline = useMemo(() => new Date() > new Date(deadline), []);
-  if (isPastDeadline) return <DeadlineClosed />;
+  const isPastDeadline = useMemo(() => new Date() > new Date(effectiveDeadline), [effectiveDeadline]);
+  if (isPastDeadline) return <DeadlineClosed effectiveDeadline={effectiveDeadline} />;
 
   return (
     <div style={{ fontFamily: sans, background: CR, minHeight: '100vh' }}>
