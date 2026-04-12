@@ -6,6 +6,7 @@ import Day2Recap from './Day2Recap';
 import Day3Recap from './Day3Recap';
 import HistoricalView from './HistoricalView';
 import EarningsPreview from './EarningsPreview';
+import AdminEntries from './AdminEntries';
 
 const bask = "'Libre Baskerville', Georgia, serif";
 const sans = "'Source Sans 3', 'Helvetica Neue', sans-serif";
@@ -140,6 +141,7 @@ function AdminShell() {
     ...(adminRound >= 3 ? [{ id: 'recap3', label: 'Day 3 Recap' }] : []),
     { id: 'historical', label: 'Historical' },
     { id: 'earnings',   label: '2026 Earnings' },
+    { id: 'entries',    label: 'Entries' },
   ];
 
   return (
@@ -218,6 +220,7 @@ function AdminShell() {
       {tab === 'recap3' && <Day3Recap />}
       {tab === 'historical' && <HistoricalView />}
       {tab === 'earnings' && <EarningsPreview />}
+      {tab === 'entries' && <AdminEntries />}
     </div>
   );
 }
