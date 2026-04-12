@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import Day1Recap from './Day1Recap';
 import Day2Recap from './Day2Recap';
+import Day3Recap from './Day3Recap';
 import HistoricalView from './HistoricalView';
 import EarningsPreview from './EarningsPreview';
 
@@ -136,6 +137,7 @@ function AdminShell() {
     { id: 'analytics',  label: 'Analytics' },
     { id: 'recap',      label: 'Day 1 Recap' },
     ...(adminRound >= 2 ? [{ id: 'recap2', label: 'Day 2 Recap' }] : []),
+    ...(adminRound >= 3 ? [{ id: 'recap3', label: 'Day 3 Recap' }] : []),
     { id: 'historical', label: 'Historical' },
     { id: 'earnings',   label: '2026 Earnings' },
   ];
@@ -213,6 +215,7 @@ function AdminShell() {
       {tab === 'analytics' && <AnalyticsView />}
       {tab === 'recap' && <Day1Recap />}
       {tab === 'recap2' && <Day2Recap />}
+      {tab === 'recap3' && <Day3Recap />}
       {tab === 'historical' && <HistoricalView />}
       {tab === 'earnings' && <EarningsPreview />}
     </div>

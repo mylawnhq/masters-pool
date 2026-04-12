@@ -143,7 +143,7 @@ function StandingRow({ entry }) {
             lineHeight: 1,
           }}
         >
-          {fmtPar(entry.score)}
+          {entry.scoreLabel || fmtPar(entry.score)}
         </div>
       </div>
     );
@@ -182,14 +182,14 @@ function StandingRow({ entry }) {
       <div
         style={{
           fontFamily: bask,
-          fontSize: 34,
+          fontSize: entry.scoreLabel ? 28 : 34,
           fontWeight: 700,
           color: '#406154',
           textAlign: 'right',
           lineHeight: 1,
         }}
       >
-        {fmtPar(entry.score)}
+        {entry.scoreLabel || fmtPar(entry.score)}
       </div>
     </div>
   );
