@@ -7,6 +7,7 @@ import Day3Recap from './Day3Recap';
 import HistoricalView from './HistoricalView';
 import EarningsPreview from './EarningsPreview';
 import AdminEntries from './AdminEntries';
+import EntryFlow from './EntryFlow';
 
 const bask = "'Libre Baskerville', Georgia, serif";
 const sans = "'Source Sans 3', 'Helvetica Neue', sans-serif";
@@ -142,6 +143,7 @@ function AdminShell() {
     { id: 'historical', label: 'Historical' },
     { id: 'earnings',   label: '2026 Earnings' },
     { id: 'entries',    label: 'Entries' },
+    { id: 'entryflow',  label: 'Entry Flow' },
   ];
 
   return (
@@ -221,6 +223,7 @@ function AdminShell() {
       {tab === 'historical' && <HistoricalView />}
       {tab === 'earnings' && <EarningsPreview />}
       {tab === 'entries' && <AdminEntries />}
+      {tab === 'entryflow' && <EntryFlow />}
     </div>
   );
 }
