@@ -222,7 +222,7 @@ function Step1({ data, setData, onNext }) {
               style={{ flex: 1, padding: '10px 12px', border: `1px solid ${BD}`, borderRadius: 7, fontSize: 14, color: DK, fontFamily: sans, background: WH, outline: 'none' }} />
             <button onClick={lookup} disabled={loading}
               style={{ padding: '10px 16px', background: G, border: 'none', borderRadius: 7, color: WH, fontSize: 13, fontWeight: 700, fontFamily: sans, cursor: loading ? 'wait' : 'pointer', whiteSpace: 'nowrap', opacity: loading ? 0.7 : 1 }}>
-              {loading ? 'Looking up\u2026' : 'Look up \u2192'}
+              {loading ? 'Looking up\u2026' : 'Look up →'}
             </button>
           </div>
           <div style={{ fontSize: 11, color: LM, marginTop: 4 }}>Use the same email as previous years to auto-fill your info</div>
@@ -252,7 +252,7 @@ function Step1({ data, setData, onNext }) {
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => setData(d => ({ ...d, useLast: true }))}
                   style={{ flex: 1, padding: '8px', background: G, border: 'none', borderRadius: 6, color: WH, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                  Start with last year's picks \u2192
+                  Start with last year's picks →
                 </button>
                 <button onClick={() => setData(d => ({ ...d, useLast: false }))}
                   style={{ flex: 1, padding: '8px', background: WH, border: `1px solid ${BD}`, borderRadius: 6, color: DK, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
@@ -265,7 +265,7 @@ function Step1({ data, setData, onNext }) {
 
         {looked && found === false && (
           <div style={{ background: '#faf8f4', border: `1px solid ${BD}`, borderRadius: 8, padding: '12px 14px', marginTop: 4, fontSize: 13, color: MT }}>
-            No previous entries found \u2014 fill in your info below. Welcome to the pool! {'\uD83C\uDF89'}
+            No previous entries found — fill in your info below. Welcome to the pool! {'\uD83C\uDF89'}
           </div>
         )}
       </Card>
@@ -278,7 +278,7 @@ function Step1({ data, setData, onNext }) {
         </Card>
       )}
 
-      {looked && <Btn onClick={onNext} disabled={!data.name || !data.phone || !data.venmo}>Continue to Picks \u2192</Btn>}
+      {looked && <Btn onClick={onNext} disabled={!data.name || !data.phone || !data.venmo}>Continue to Picks →</Btn>}
     </div>
   );
 }
@@ -307,7 +307,7 @@ function Step2({ data, setData, onNext, onBack }) {
     <div>
       {data.useLast && (
         <div style={{ background: '#fffbea', border: '1px solid #f0d060', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: '#7a5c00' }}>
-          {'\uD83D\uDCCB'} Loaded last year's picks \u2014 review and adjust as needed.
+          {'\uD83D\uDCCB'} Loaded last year's picks — review and adjust as needed.
         </div>
       )}
 
@@ -320,27 +320,27 @@ function Step2({ data, setData, onNext, onBack }) {
         </div>
       </div>
 
-      <Card title="Group 1 \u2014 Pick one">
+      <Card title="Group 1 — Pick one">
         <Sel label="Your pick" value={p.g1 || ''} onChange={v => set('g1', v)} options={opts('g1', 'g1')} />
       </Card>
 
-      <Card title="Group 2 \u2014 Pick two different players">
+      <Card title="Group 2 — Pick two different players">
         <Sel label="First pick" value={p.g2a || ''} onChange={v => set('g2a', v)} options={opts('g2', 'g2a', [p.g2b])} />
         <Sel label="Second pick" value={p.g2b || ''} onChange={v => set('g2b', v)} options={opts('g2', 'g2b', [p.g2a])} hint="Must differ from your first pick" />
       </Card>
 
-      <Card title="Group 3 \u2014 Pick two different players">
+      <Card title="Group 3 — Pick two different players">
         <Sel label="First pick" value={p.g3a || ''} onChange={v => set('g3a', v)} options={opts('g3', 'g3a', [p.g3b])} />
         <Sel label="Second pick" value={p.g3b || ''} onChange={v => set('g3b', v)} options={opts('g3', 'g3b', [p.g3a])} hint="Must differ from your first pick" />
       </Card>
 
-      <Card title="Group 4 \u2014 Pick one">
+      <Card title="Group 4 — Pick one">
         <Sel label="Your pick" value={p.g4 || ''} onChange={v => set('g4', v)} options={opts('g4', 'g4')} />
       </Card>
 
       <div style={{ display: 'flex', gap: 10 }}>
         <Btn secondary onClick={onBack}>{'\u2190'} Back</Btn>
-        <Btn onClick={onNext} disabled={!done}>Continue to Tiebreakers \u2192</Btn>
+        <Btn onClick={onNext} disabled={!done}>Continue to Tiebreakers →</Btn>
       </div>
     </div>
   );
@@ -361,7 +361,7 @@ function Step3({ data, setData, onNext, onBack }) {
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: MT, marginBottom: 6 }}>Tiebreaker 1 \u2014 Low Amateur</label>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: MT, marginBottom: 6 }}>Tiebreaker 1 — Low Amateur</label>
           <select value={tb.lowAmateur || ''} onChange={e => set('lowAmateur', e.target.value)}
             style={{ width: '100%', padding: '10px 12px', border: `1px solid ${tb.lowAmateur ? G : BD}`, borderRadius: 7, fontSize: 14, color: tb.lowAmateur ? DK : LM, fontFamily: sans, background: WH, outline: 'none', boxSizing: 'border-box' }}>
             <option value="">Select the low amateur...</option>
@@ -371,7 +371,7 @@ function Step3({ data, setData, onNext, onBack }) {
         </div>
 
         <div style={{ marginBottom: 4 }}>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: MT, marginBottom: 6 }}>Tiebreaker 2 \u2014 Winning Score</label>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: MT, marginBottom: 6 }}>Tiebreaker 2 — Winning Score</label>
           <select value={tb.winningScore || ''} onChange={e => set('winningScore', e.target.value)}
             style={{ width: '100%', padding: '10px 12px', border: `1px solid ${tb.winningScore ? G : BD}`, borderRadius: 7, fontSize: 14, color: tb.winningScore ? DK : LM, fontFamily: sans, background: WH, outline: 'none', boxSizing: 'border-box' }}>
             <option value="">Select predicted winning score...</option>
@@ -382,7 +382,7 @@ function Step3({ data, setData, onNext, onBack }) {
       </Card>
       <div style={{ display: 'flex', gap: 10 }}>
         <Btn secondary onClick={onBack}>{'\u2190'} Back</Btn>
-        <Btn onClick={onNext} disabled={!ready}>Review & Pay \u2192</Btn>
+        <Btn onClick={onNext} disabled={!ready}>Review & Pay →</Btn>
       </div>
     </div>
   );
@@ -464,9 +464,9 @@ function Step4({ data, onBack }) {
           setTimeout(() => { window.location.href = venmoWebUrl; }, 1500);
         }}
         style={{ display: 'block', padding: '14px', borderRadius: 8, background: '#3D95CE', color: WH, fontSize: 15, fontWeight: 700, textDecoration: 'none', fontFamily: sans, marginBottom: 10 }}>
-        Pay ${venmoAmount} on Venmo \u2192
+        Pay ${venmoAmount} on Venmo →
       </a>
-      <div style={{ fontSize: 11, color: LM }}>Venmo @{venmoHandle} \u00b7 your name is pre-filled in the memo</div>
+      <div style={{ fontSize: 11, color: LM }}>Venmo @{venmoHandle} · your name is pre-filled in the memo</div>
     </div>
   );
 
@@ -495,7 +495,7 @@ function Step4({ data, onBack }) {
       </Card>
 
       <div style={{ background: '#f0faf5', border: '1px solid rgba(0,107,84,0.2)', borderRadius: 10, padding: '16px 18px', marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: G, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{'\uD83D\uDCB3'} Payment \u2014 ${entryFee} via Venmo</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: G, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{'\uD83D\uDCB3'} Payment — ${entryFee} via Venmo</div>
         <div style={{ fontSize: 13, color: DK, lineHeight: 1.6, marginBottom: 10 }}>
           After submitting, you'll be taken to Venmo to send ${entryFee} to <strong>@{venmoHandle}</strong>. Your name will be pre-filled in the memo. Alex confirms payment within 24 hours and you'll get a confirmation email.
         </div>
@@ -510,7 +510,7 @@ function Step4({ data, onBack }) {
 
       <div style={{ display: 'flex', gap: 10 }}>
         <Btn secondary onClick={onBack}>{'\u2190'} Back</Btn>
-        <Btn onClick={submit} disabled={submitting}>{submitting ? 'Submitting\u2026' : 'Submit Picks & Pay on Venmo \u2192'}</Btn>
+        <Btn onClick={submit} disabled={submitting}>{submitting ? 'Submitting\u2026' : 'Submit Picks & Pay on Venmo →'}</Btn>
       </div>
     </div>
   );
@@ -523,9 +523,9 @@ function DeadlineClosed({ effectiveDeadline }) {
   return (
     <div style={{ fontFamily: sans, background: CR, minHeight: '100vh' }}>
       <div style={{ background: G, padding: '40px 24px', textAlign: 'center' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>Mendoza's Masters Pool \u00b7 {year}</div>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>Mendoza&apos;s Masters Pool · {year}</div>
         <div style={{ fontFamily: bask, fontStyle: 'italic', fontWeight: 700, fontSize: 26, color: WH, marginBottom: 4 }}>Entry is Closed</div>
-        <div style={{ fontFamily: bask, fontStyle: 'italic', fontSize: 14, color: GLD }}>{course} \u00b7 {dates}</div>
+        <div style={{ fontFamily: bask, fontStyle: 'italic', fontSize: 14, color: GLD }}>{course} · {dates}</div>
       </div>
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '40px 16px', textAlign: 'center' }}>
         <div style={{ fontSize: 52, marginBottom: 16 }}>{'\u26F3'}</div>
@@ -534,7 +534,7 @@ function DeadlineClosed({ effectiveDeadline }) {
           Entry closed on {dl.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at {dl.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}.
         </div>
         <a href="/" style={{ display: 'inline-block', padding: '12px 24px', background: G, color: WH, borderRadius: 8, textDecoration: 'none', fontWeight: 700, fontFamily: sans, fontSize: 14 }}>
-          View the Leaderboard \u2192
+          View the Leaderboard →
         </a>
       </div>
     </div>
@@ -563,18 +563,18 @@ export default function EntryFlow({ deadlineOverride, preview }) {
           <span style={{ color: GLD, fontSize: 12 }}>{'\u2605'}</span>
           <div style={{ flex: 1, maxWidth: 60, height: 1, background: 'rgba(212,175,55,0.4)' }} />
         </div>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>Mendoza's Masters Pool \u00b7 {year}</div>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>Mendoza&apos;s Masters Pool · {year}</div>
         <div style={{ fontFamily: bask, fontStyle: 'italic', fontWeight: 700, fontSize: 26, color: WH, marginBottom: 4 }}>Enter the Pool</div>
-        <div style={{ fontFamily: bask, fontStyle: 'italic', fontSize: 14, color: GLD }}>{course} \u00b7 {dates}</div>
+        <div style={{ fontFamily: bask, fontStyle: 'italic', fontSize: 14, color: GLD }}>{course} · {dates}</div>
       </div>
 
       {/* Info strip */}
       <div style={{ background: DK, padding: '8px 24px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Entry fee: <strong style={{ color: GLD }}>${entryFee}</strong></span>
-        <span style={{ color: 'rgba(255,255,255,0.2)' }}>\u00b7</span>
+        <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>
         <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Pool purse: <strong style={{ color: GLD }}>${poolPurse.toLocaleString()}</strong></span>
-        <span style={{ color: 'rgba(255,255,255,0.2)' }}>\u00b7</span>
-        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Deadline: <strong style={{ color: WH }}>Apr 9 \u00b7 8am ET</strong></span>
+        <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>
+        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Deadline: <strong style={{ color: WH }}>Apr 9 · 8am ET</strong></span>
       </div>
 
       {/* Form content */}

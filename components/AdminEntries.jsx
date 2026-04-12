@@ -256,15 +256,15 @@ export default function AdminEntries() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <div style={{ fontFamily: bask, fontStyle: 'italic', fontSize: 22, color: DK, marginBottom: 4 }}>Entrant Dashboard</div>
-          <div style={{ fontSize: 13, color: MT }}>Manage entries \u00b7 Confirm payments \u00b7 Activate picks on the live site</div>
+          <div style={{ fontSize: 13, color: MT }}>Manage entries · Confirm payments · Activate picks on the live site</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <label style={{ padding: '9px 14px', background: WH, border: `1px solid ${BD}`, borderRadius: 7, fontSize: 12, fontWeight: 600, color: DK, fontFamily: sans, cursor: 'pointer' }}>
-            \u2191 Import CSV
+            ↑ Import CSV
             <input type="file" accept=".csv" ref={fileRef} onChange={handleImport} style={{ display: 'none' }} />
           </label>
-          <button onClick={exportCSV} style={{ padding: '9px 14px', background: WH, border: `1px solid ${BD}`, borderRadius: 7, fontSize: 12, fontWeight: 600, color: DK, fontFamily: sans, cursor: 'pointer' }}>\u2193 Export CSV</button>
-          <button onClick={fetchEntries} style={{ padding: '9px 14px', background: WH, border: `1px solid ${BD}`, borderRadius: 7, fontSize: 12, fontWeight: 600, color: G, fontFamily: sans, cursor: 'pointer' }}>\u21bb Refresh</button>
+          <button onClick={exportCSV} style={{ padding: '9px 14px', background: WH, border: `1px solid ${BD}`, borderRadius: 7, fontSize: 12, fontWeight: 600, color: DK, fontFamily: sans, cursor: 'pointer' }}>↓ Export CSV</button>
+          <button onClick={fetchEntries} style={{ padding: '9px 14px', background: WH, border: `1px solid ${BD}`, borderRadius: 7, fontSize: 12, fontWeight: 600, color: G, fontFamily: sans, cursor: 'pointer' }}>↻ Refresh</button>
         </div>
       </div>
 
@@ -332,7 +332,7 @@ export default function AdminEntries() {
 
       {/* ── Table ────────────────────────────────────────────────────── */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 40, color: MT, fontStyle: 'italic' }}>Loading entries\u2026</div>
+        <div style={{ textAlign: 'center', padding: 40, color: MT, fontStyle: 'italic' }}>Loading entries…</div>
       ) : (
         <div style={{ background: WH, border: `1px solid ${BD}`, borderRadius: 10, overflow: 'hidden' }}>
           {/* Header row */}
@@ -463,7 +463,7 @@ export default function AdminEntries() {
       )}
 
       <div style={{ marginTop: 14, fontSize: 12, color: LM, textAlign: 'center' }}>
-        Showing {visible.length} of {entries.length} entries \u00b7 {confirmed} confirmed and live on the leaderboard
+        Showing {visible.length} of {entries.length} entries · {confirmed} confirmed and live on the leaderboard
       </div>
     </div>
   );
