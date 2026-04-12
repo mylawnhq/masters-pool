@@ -128,6 +128,7 @@ function AdminShell() {
     supabase
       .from('golfer_leaderboard')
       .select('current_round')
+      .not('current_round', 'is', null)
       .limit(1)
       .then(({ data }) => {
         if (data?.[0]?.current_round) setAdminRound(data[0].current_round);
