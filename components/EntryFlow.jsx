@@ -543,7 +543,7 @@ function DeadlineClosed({ effectiveDeadline }) {
 
 // ── Main component ──────────────────────────────────────────────────────
 
-export default function EntryFlow({ deadlineOverride }) {
+export default function EntryFlow({ deadlineOverride, preview }) {
   const [step, setStep] = useState(0);
   const [data, setData] = useState({});
 

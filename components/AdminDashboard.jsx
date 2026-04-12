@@ -7,7 +7,6 @@ import Day3Recap from './Day3Recap';
 import HistoricalView from './HistoricalView';
 import EarningsPreview from './EarningsPreview';
 import AdminEntries from './AdminEntries';
-import EntryFlow from './EntryFlow';
 
 const bask = "'Libre Baskerville', Georgia, serif";
 const sans = "'Source Sans 3', 'Helvetica Neue', sans-serif";
@@ -123,7 +122,6 @@ export default function AdminDashboard() {
 function AdminShell() {
   const [tab, setTab] = useState('analytics');
   const [adminRound, setAdminRound] = useState(1);
-  const [entryDeadline, setEntryDeadline] = useState('');
 
   // Fetch the current round so we can gate recap tabs.
   useEffect(() => {
@@ -144,7 +142,6 @@ function AdminShell() {
     { id: 'historical', label: 'Historical' },
     { id: 'earnings',   label: '2026 Earnings' },
     { id: 'entries',    label: 'Entries' },
-    { id: 'entryflow',  label: 'Entry Flow' },
   ];
 
   return (
@@ -224,71 +221,6 @@ function AdminShell() {
       {tab === 'historical' && <HistoricalView />}
       {tab === 'earnings' && <EarningsPreview />}
       {tab === 'entries' && <AdminEntries />}
-      {tab === 'entryflow' && (
-        <div>
-          {/* Deadline control bar */}
-          <div style={{ maxWidth: 560, margin: '0 auto', padding: '16px 16px 0' }}>
-            <div style={{
-              background: '#fff', border: '1px solid #e0dbd2', borderRadius: 10,
-              padding: '14px 18px', display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
-            }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8b7d6b', marginBottom: 4 }}>
-                  Submission Cutoff
-                </div>
-                <div style={{ fontSize: 12, color: '#b5a999', lineHeight: 1.4 }}>
-                  {entryDeadline
-                    ? (new Date(entryDeadline) < new Date()
-                        ? 'Deadline has passed \u2014 form shows closed state below'
-                        : `Deadline: ${new Date(entryDeadline).toLocaleString()}`)
-                    : 'No override \u2014 using config default'}
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                <input
-                  type="datetime-local"
-                  value={entryDeadline}
-                  onChange={e => setEntryDeadline(e.target.value)}
-                  style={{
-                    padding: '7px 10px', border: '1px solid #e0dbd2', borderRadius: 6,
-                    fontSize: 13, fontFamily: sans, color: '#1a2e1a', background: '#fff', outline: 'none',
-                  }}
-                />
-                <button
-                  onClick={() => {
-                    // Set deadline to 1 minute ago to trigger closed state
-                    const past = new Date(Date.now() - 60000);
-                    setEntryDeadline(past.toISOString().slice(0, 16));
-                  }}
-                  style={{
-                    padding: '7px 12px', borderRadius: 6, border: '1px solid #c0392b',
-                    background: '#fff', color: '#c0392b', fontSize: 11, fontWeight: 700,
-                    fontFamily: sans, cursor: 'pointer', whiteSpace: 'nowrap',
-                  }}
-                >
-                  Close Now
-                </button>
-                <button
-                  onClick={() => {
-                    // Set deadline far in the future to show open form
-                    const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-                    setEntryDeadline(future.toISOString().slice(0, 16));
-                  }}
-                  style={{
-                    padding: '7px 12px', borderRadius: 6, border: '1px solid #006B54',
-                    background: '#fff', color: '#006B54', fontSize: 11, fontWeight: 700,
-                    fontFamily: sans, cursor: 'pointer', whiteSpace: 'nowrap',
-                  }}
-                >
-                  Open Form
-                </button>
-              </div>
-            </div>
-          </div>
-          <EntryFlow key={entryDeadline} deadlineOverride={entryDeadline || undefined} />
-        </div>
-      )}
     </div>
   );
 }
