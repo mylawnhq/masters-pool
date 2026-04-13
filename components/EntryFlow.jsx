@@ -128,9 +128,28 @@ function Btn({ children, onClick, secondary, disabled }) {
   );
 }
 
+// ── Preview mock data ──────────────────────────────────────────────────
+
+const PREVIEW_PATRONS = {
+  "alexander.e.mendoza@gmail.com": {
+    name: "Alex Mendoza",
+    phone: "555-000-0001",
+    venmo: "@alexmendoza",
+    history: { 2020: "12", 2021: "8", 2023: "34", 2024: "19", 2025: "7" },
+    lastPicks: {
+      g1: "Scottie Scheffler",
+      g2a: "Rory McIlroy",
+      g2b: "Ludvig \u00c5berg",
+      g3a: "Shane Lowry",
+      g3b: "Sam Burns",
+      g4: "Jason Day",
+    },
+  },
+};
+
 // ── Step 1: Your Info ───────────────────────────────────────────────────
 
-function Step1({ data, setData, onNext }) {
+function Step1({ data, setData, onNext, preview }) {
   const [email, setEmail] = useState(data.email || '');
   const [looked, setLooked] = useState(!!data.email);
   const [found, setFound] = useState(data._lookupResult ?? null);
@@ -141,6 +160,26 @@ function Step1({ data, setData, onNext }) {
     setLoading(true);
     try {
       const q = email.toLowerCase().trim();
+
+      // In preview mode, use mock data instead of Supabase
+      if (preview && PREVIEW_PATRONS[q]) {
+        const mock = PREVIEW_PATRONS[q];
+        const result = {
+          name: mock.name,
+          phone: mock.phone,
+          venmo: mock.venmo,
+          history: mock.history,
+          lastPicks: mock.lastPicks,
+        };
+        setFound(result);
+        setData(d => ({
+          ...d, email: q, name: mock.name, phone: mock.phone, venmo: mock.venmo,
+          history: mock.history, lastPicks: mock.lastPicks, _lookupResult: result,
+        }));
+        setLooked(true);
+        setLoading(false);
+        return;
+      }
 
       // 1. Check patrons table first (seeded historical data)
       const { data: patronRows } = await supabase
@@ -580,7 +619,7 @@ export default function EntryFlow({ deadlineOverride, preview }) {
       {/* Form content */}
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '28px 16px 60px' }}>
         <StepBar current={step} />
-        {step === 0 && <Step1 data={data} setData={setData} onNext={() => setStep(1)} />}
+        {step === 0 && <Step1 data={data} setData={setData} onNext={() => setStep(1)} preview={preview} />}
         {step === 1 && <Step2 data={data} setData={setData} onNext={() => setStep(2)} onBack={() => setStep(0)} />}
         {step === 2 && <Step3 data={data} setData={setData} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
         {step === 3 && <Step4 data={data} onBack={() => setStep(2)} />}
