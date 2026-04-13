@@ -350,11 +350,13 @@ export default function RecapCard({ data }) {
   const [errorMsg, setErrorMsg] = useState('');
 
   const day = data.day;
+  const eyebrow = data.eyebrow || null;
   const title = data.title || `Day ${day} Recap`;
   const subtitle = data.subtitle;
   const standingsTitle = data.standingsTitle || `Pool Standings After R${day}`;
   const highlightsTitle = data.highlightsTitle || `Day ${day} Highlights`;
   const footerHint = data.footerHint || DEFAULT_FOOTER_HINT;
+  const footerStats = data.footerStats || null;
   const siteUrl = data.siteUrl || DEFAULT_SITE_URL;
   const siteLabel = data.siteLabel || DEFAULT_SITE_LABEL;
 
@@ -489,6 +491,20 @@ export default function RecapCard({ data }) {
             textAlign: 'center',
           }}
         >
+          {eyebrow && (
+            <div
+              style={{
+                fontSize: 11,
+                letterSpacing: 3,
+                textTransform: 'uppercase',
+                fontWeight: 600,
+                color: 'rgba(255,255,255,.55)',
+                marginBottom: 16,
+              }}
+            >
+              {eyebrow}
+            </div>
+          )}
           <h1
             style={{
               fontFamily: bask,
@@ -638,6 +654,18 @@ export default function RecapCard({ data }) {
             >
               {siteLabel}
             </a>
+            {footerStats && (
+              <div
+                style={{
+                  fontSize: 11,
+                  color: '#a5998a',
+                  marginTop: 14,
+                  letterSpacing: 0.3,
+                }}
+              >
+                {footerStats}
+              </div>
+            )}
           </div>
         </div>
       </div>

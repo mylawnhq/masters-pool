@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import Day1Recap from './Day1Recap';
 import Day2Recap from './Day2Recap';
 import Day3Recap from './Day3Recap';
+import Day4Recap from './Day4Recap';
 import HistoricalView from './HistoricalView';
 import EarningsPreview from './EarningsPreview';
 import AdminEntries from './AdminEntries';
@@ -127,6 +128,7 @@ function AdminShell() {
     { id: 'recap',      label: 'Day 1 Recap' },
     { id: 'recap2',     label: 'Day 2 Recap' },
     { id: 'recap3',     label: 'Day 3 Recap' },
+    { id: 'recap4',     label: 'Day 4 Recap' },
     { id: 'historical', label: 'Historical' },
     { id: 'earnings',   label: '2026 Earnings' },
     { id: 'entries',    label: 'Entries' },
@@ -206,6 +208,7 @@ function AdminShell() {
       {tab === 'recap' && <Day1Recap />}
       {tab === 'recap2' && <Day2Recap />}
       {tab === 'recap3' && <Day3Recap />}
+      {tab === 'recap4' && <Day4Recap />}
       {tab === 'historical' && <HistoricalView />}
       {tab === 'earnings' && <EarningsPreview />}
       {tab === 'entries' && <AdminEntries />}

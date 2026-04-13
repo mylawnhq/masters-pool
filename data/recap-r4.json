@@ -1,0 +1,93 @@
+{
+  "day": 4,
+  "eyebrow": "Mendoza\u2019s Masters Pool \u00b7 2026",
+  "title": "Day 4 Recap",
+  "subtitle": "Final Round \u00b7 Sunday",
+  "standingsTitle": "Final Pool Standings",
+  "highlightsTitle": "Final Round Highlights",
+  "top5": [
+    {
+      "rank": "1",
+      "name": "Mason Colling",
+      "score": 7385625,
+      "scoreLabel": "$7.39M",
+      "picks": ["McIlroy", "Young", "Rose", "Burns", "H\u00f8jgaard", "Cabrera"],
+      "highlighted": true
+    },
+    {
+      "rank": "2",
+      "name": "Chris Moore",
+      "score": 6889500,
+      "scoreLabel": "$6.89M",
+      "picks": ["McIlroy", "Spieth", "Rose", "Homa", "Bradley", "Johnson"],
+      "highlighted": false
+    },
+    {
+      "rank": "3",
+      "name": "Cody Briscoe",
+      "score": 6781500,
+      "scoreLabel": "$6.78M",
+      "picks": ["McIlroy", "Rose", "Young", "Woodland", "Watson", "Willett"],
+      "highlighted": false
+    },
+    {
+      "rank": "4",
+      "name": "Vincent Gallo",
+      "score": 6525000,
+      "scoreLabel": "$6.53M",
+      "picks": ["McIlroy", "Young", "Fitzpatrick", "H\u00f8jgaard", "Homa", "Johnson"],
+      "highlighted": false
+    },
+    {
+      "rank": "5",
+      "name": "Cecil Gant",
+      "score": 6453000,
+      "scoreLabel": "$6.45M",
+      "picks": ["McIlroy", "Fleetwood", "Young", "Woodland", "Homa", "Johnson"],
+      "highlighted": false
+    }
+  ],
+  "highlights": [
+    {
+      "label": "Best Golfer R4",
+      "name": "Tyrrell Hatton",
+      "detail": "66 (\u22126) \u00b7 picked by 2 teams",
+      "detailColor": "#006B54"
+    },
+    {
+      "label": "Worst Golfer R4",
+      "name": "Haotong Li",
+      "detail": "+8 (80) \u00b7 picked by 1 team",
+      "detailColor": "#c0392b"
+    },
+    {
+      "label": "Comeback Kid (Patron)",
+      "name": "Max Pickert",
+      "detail": "#102 final \u00b7 climbed 120 spots",
+      "detailColor": "#006B54"
+    },
+    {
+      "label": "Reverse Comeback (Patron)",
+      "name": "Cory Seychel",
+      "detail": "#207 final \u00b7 dropped 143 spots",
+      "detailColor": "#c0392b"
+    }
+  ],
+  "extraHighlights": [
+    {
+      "label": "Most Birdies \u2014 Tournament",
+      "name": "Rory McIlroy",
+      "detail": "24 birdies across 4 rounds \u00b7 34 teams picked",
+      "detailColor": "#d4af37"
+    },
+    {
+      "label": "Sunday Drama",
+      "name": "17 Top-3 Changes",
+      "detail": "Hole 6 flipped all 3 at once",
+      "detailColor": "#006B54"
+    }
+  ],
+  "footerHint": "A Tradition Unlike Any Other",
+  "siteLabel": "mendozas-masters-pool.vercel.app",
+  "footerStats": "4,638 visits \u00b7 392 unique \u00b7 Day 4"
+}
