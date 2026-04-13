@@ -682,26 +682,20 @@ export default function Leaderboard({ entries, earnings: initialEarnings, golfer
                   left: '50%',
                   top: '50%',
                   transform: 'translate(-50%, -50%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
                   pointerEvents: 'none',
                 }}
               >
-                <div style={{ width: 28, borderTop: '1.5px dashed #c0392b' }} />
                 <span
                   style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: '#c0392b',
-                    letterSpacing: 1,
+                    fontFamily: bask,
+                    fontStyle: 'italic',
+                    fontSize: 14,
+                    color: '#006B54',
                     whiteSpace: 'nowrap',
-                    textTransform: 'none',
                   }}
                 >
-                  {cutLabel} {cutLine > 0 ? `+${cutLine}` : cutLine === 0 ? 'E' : `${cutLine}`}
+                  Congratulations Rory on back-to-back green jackets {'\uD83C\uDFC6'}
                 </span>
-                <div style={{ width: 28, borderTop: '1.5px dashed #c0392b' }} />
               </div>
             )}
           </div>

@@ -914,36 +914,21 @@ export default function MastersLeaderboardOverlay({ open, onClose, golferStats, 
                       {showSep && (
                         <div
                           style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 10,
-                            padding: '10px 16px',
+                            padding: '12px 16px',
+                            textAlign: 'center',
                           }}
                         >
-                          <div
-                            style={{
-                              flex: 1,
-                              borderTop: '2px dashed #c0392b',
-                            }}
-                          />
                           <span
                             style={{
-                              fontSize: 9,
-                              fontWeight: 700,
-                              letterSpacing: 1.2,
-                              textTransform: 'uppercase',
-                              color: '#c0392b',
+                              fontFamily: "'Libre Baskerville', Georgia, serif",
+                              fontStyle: 'italic',
+                              fontSize: 18,
+                              color: '#006B54',
                               whiteSpace: 'nowrap',
                             }}
                           >
-                            {cutLabelText} {fmtCut(cutLine)}
+                            Congratulations Rory on back-to-back green jackets {'\uD83C\uDFC6'}
                           </span>
-                          <div
-                            style={{
-                              flex: 1,
-                              borderTop: '2px dashed #c0392b',
-                            }}
-                          />
                         </div>
                       )}
                       {renderRow(g, i, 'main')}
