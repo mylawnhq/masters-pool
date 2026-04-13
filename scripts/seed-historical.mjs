@@ -21,10 +21,10 @@ const supabase = createClient(
 );
 
 async function main() {
-  // Check if table already has data
-  const { count, error: countErr } = await supabase
+  // Check which years already exist in the table
+  const { data: existingRows, error: countErr } = await supabase
     .from('historical_results')
-    .select('id', { count: 'exact', head: true });
+    .select('year');
 
   if (countErr) {
     console.error('Error checking table:', countErr.message);
@@ -33,15 +33,18 @@ async function main() {
     process.exit(1);
   }
 
-  if (count > 0) {
-    console.log(`Table already has ${count} rows — skipping seed to avoid duplicates.`);
-    process.exit(0);
-  }
+  const existingYears = new Set((existingRows || []).map(r => String(r.year)));
+  console.log('Existing years in DB:', [...existingYears].sort().join(', ') || '(none)');
 
   const years = Object.keys(HISTORICAL_DATA.years || {});
   let total = 0;
 
   for (const year of years) {
+    if (existingYears.has(year)) {
+      console.log(`  ${year}: already in DB, skipping`);
+      continue;
+    }
+
     const entry = HISTORICAL_DATA.years[year];
     const pool = entry?.pool || {};
     const results = entry?.results || [];
@@ -75,7 +78,18 @@ async function main() {
     total += rows.length;
   }
 
-  console.log(`\n✔ Seeded ${total} total rows across ${years.length} years.`);
+  // Verify final state
+  const { data: finalRows } = await supabase
+    .from('historical_results')
+    .select('year');
+  const byYear = {};
+  (finalRows || []).forEach(r => { byYear[r.year] = (byYear[r.year] || 0) + 1; });
+  console.log('\nFinal row counts:');
+  Object.entries(byYear).sort(([a], [b]) => a - b).forEach(([y, c]) => {
+    console.log(`  ${y}: ${c} rows`);
+  });
+
+  console.log(`\n✔ Seeded ${total} new rows. Previous data untouched.`);
 }
 
 main();
